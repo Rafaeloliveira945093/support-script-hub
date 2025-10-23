@@ -27,8 +27,8 @@ const Scripts = () => {
   const [filteredScripts, setFilteredScripts] = useState<Script[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingScript, setEditingScript] = useState<Script | null>(null);
-  const [filtroEstruturante, setFiltroEstruturante] = useState<string>("");
-  const [filtroNivel, setFiltroNivel] = useState<string>("");
+  const [filtroEstruturante, setFiltroEstruturante] = useState<string>("all");
+  const [filtroNivel, setFiltroNivel] = useState<string>("all");
   
   const [formData, setFormData] = useState({
     titulo_script: "",
@@ -70,11 +70,11 @@ const Scripts = () => {
   const filterScripts = () => {
     let filtered = scripts;
 
-    if (filtroEstruturante) {
+    if (filtroEstruturante && filtroEstruturante !== "all") {
       filtered = filtered.filter(s => s.estruturante === filtroEstruturante);
     }
 
-    if (filtroNivel) {
+    if (filtroNivel && filtroNivel !== "all") {
       filtered = filtered.filter(s => s.nivel.toString() === filtroNivel);
     }
 
@@ -358,7 +358,7 @@ const Scripts = () => {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   {estruturantes.map(e => (
                     <SelectItem key={e} value={e}>{e}</SelectItem>
                   ))}
@@ -372,7 +372,7 @@ const Scripts = () => {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="1">Nível 1</SelectItem>
                   <SelectItem value="2">Nível 2</SelectItem>
                   <SelectItem value="3">Nível 3</SelectItem>
