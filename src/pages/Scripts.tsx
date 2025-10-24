@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileDown, Edit, Trash2, Filter } from "lucide-react";
+import { Plus, FileDown, Edit, Trash2, Filter, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 
@@ -29,6 +29,7 @@ const Scripts = () => {
   const [editingScript, setEditingScript] = useState<Script | null>(null);
   const [filtroEstruturante, setFiltroEstruturante] = useState<string>("all");
   const [filtroNivel, setFiltroNivel] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
   
   const [formData, setFormData] = useState({
     titulo_script: "",
@@ -46,7 +47,7 @@ const Scripts = () => {
 
   useEffect(() => {
     filterScripts();
-  }, [scripts, filtroEstruturante, filtroNivel]);
+  }, [scripts, filtroEstruturante, filtroNivel, searchTerm]);
 
   const fetchScripts = async () => {
     try {
@@ -76,6 +77,13 @@ const Scripts = () => {
 
     if (filtroNivel && filtroNivel !== "all") {
       filtered = filtered.filter(s => s.nivel.toString() === filtroNivel);
+    }
+
+    if (searchTerm.trim() !== "") {
+      filtered = filtered.filter(s => 
+        s.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.titulo_script.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
     setFilteredScripts(filtered);
@@ -340,6 +348,16 @@ const Scripts = () => {
             </DialogContent>
           </Dialog>
         </div>
+      </div>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por ID ou Título..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
       <Card>

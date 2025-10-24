@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Clock, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Clock, AlertCircle, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Chamado = {
@@ -18,6 +19,8 @@ type Chamado = {
 
 const Chamados = () => {
   const [chamados, setChamados] = useState<Chamado[]>([]);
+  const [filteredChamados, setFilteredChamados] = useState<Chamado[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -25,6 +28,18 @@ const Chamados = () => {
   useEffect(() => {
     fetchChamados();
   }, []);
+
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredChamados(chamados);
+    } else {
+      const filtered = chamados.filter((chamado) =>
+        chamado.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        chamado.titulo.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredChamados(filtered);
+    }
+  }, [searchTerm, chamados]);
 
   const fetchChamados = async () => {
     try {
@@ -36,6 +51,7 @@ const Chamados = () => {
       if (error) throw error;
 
       setChamados(data || []);
+      setFilteredChamados(data || []);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar chamados",
@@ -93,7 +109,17 @@ const Chamados = () => {
         </Button>
       </div>
 
-      {chamados.length === 0 ? (
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por ID ou Título..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {filteredChamados.length === 0 && chamados.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
@@ -107,9 +133,19 @@ const Chamados = () => {
             </Button>
           </CardContent>
         </Card>
+      ) : filteredChamados.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Search className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-lg font-medium mb-2">Nenhum chamado encontrado</p>
+            <p className="text-muted-foreground">
+              Tente buscar com outros termos
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4">
-          {chamados.map((chamado) => (
+          {filteredChamados.map((chamado) => (
             <Card
               key={chamado.id}
               className="hover:shadow-md transition-shadow cursor-pointer"

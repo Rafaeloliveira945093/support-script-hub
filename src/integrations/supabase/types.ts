@@ -17,10 +17,13 @@ export type Database = {
       chamados: {
         Row: {
           data_criacao: string | null
+          data_encaminhamento: string | null
+          data_encerramento: string | null
           descricao_usuario: string
           estruturante: string
           id: string
           nivel: number
+          nivel_encaminhado: number | null
           status: string
           titulo: string
           updated_at: string | null
@@ -28,10 +31,13 @@ export type Database = {
         }
         Insert: {
           data_criacao?: string | null
+          data_encaminhamento?: string | null
+          data_encerramento?: string | null
           descricao_usuario: string
           estruturante: string
           id?: string
           nivel: number
+          nivel_encaminhado?: number | null
           status?: string
           titulo: string
           updated_at?: string | null
@@ -39,10 +45,13 @@ export type Database = {
         }
         Update: {
           data_criacao?: string | null
+          data_encaminhamento?: string | null
+          data_encerramento?: string | null
           descricao_usuario?: string
           estruturante?: string
           id?: string
           nivel?: number
+          nivel_encaminhado?: number | null
           status?: string
           titulo?: string
           updated_at?: string | null

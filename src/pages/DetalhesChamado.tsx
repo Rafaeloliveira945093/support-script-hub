@@ -39,10 +39,13 @@ const DetalhesChamado = () => {
   const [chamado, setChamado] = useState<Chamado | null>(null);
   const [respostas, setRespostas] = useState<Resposta[]>([]);
   const [novaResposta, setNovaResposta] = useState("");
+  const [tipoResposta, setTipoResposta] = useState<string>("usuario");
   const [status, setStatus] = useState("");
   const [nivel, setNivel] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [previousStatus, setPreviousStatus] = useState("");
+  const [previousNivel, setPreviousNivel] = useState("");
 
   useEffect(() => {
     if (id) {
@@ -74,6 +77,8 @@ const DetalhesChamado = () => {
       setChamado(data);
       setStatus(data.status);
       setNivel(data.nivel.toString());
+      setPreviousStatus(data.status);
+      setPreviousNivel(data.nivel.toString());
     } catch (error: any) {
       toast({
         title: "Erro ao carregar chamado",
@@ -109,15 +114,31 @@ const DetalhesChamado = () => {
     if (!chamado) return;
 
     try {
+      const updateData: any = {
+        status,
+        nivel: parseInt(nivel),
+      };
+
+      // Registrar data de encerramento quando status muda para "Fechado"
+      if (status.toLowerCase() === "fechado" && previousStatus.toLowerCase() !== "fechado") {
+        updateData.data_encerramento = new Date().toISOString();
+      }
+
+      // Registrar data de encaminhamento quando nível aumenta
+      if (parseInt(nivel) > parseInt(previousNivel)) {
+        updateData.data_encaminhamento = new Date().toISOString();
+        updateData.nivel_encaminhado = parseInt(nivel);
+      }
+
       const { error } = await supabase
         .from("chamados")
-        .update({
-          status,
-          nivel: parseInt(nivel),
-        })
+        .update(updateData)
         .eq("id", chamado.id);
 
       if (error) throw error;
+
+      setPreviousStatus(status);
+      setPreviousNivel(nivel);
     } catch (error: any) {
       console.error("Erro ao salvar automaticamente:", error);
     }
@@ -146,7 +167,7 @@ const DetalhesChamado = () => {
           chamado_id: id,
           user_id: user.id,
           conteudo: novaResposta,
-          tipo: "atendente",
+          tipo: tipoResposta,
         });
 
       if (error) throw error;
@@ -157,6 +178,7 @@ const DetalhesChamado = () => {
       });
 
       setNovaResposta("");
+      setTipoResposta("usuario");
       fetchRespostas();
     } catch (error: any) {
       toast({
@@ -267,7 +289,8 @@ const DetalhesChamado = () => {
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">
-                          {resposta.tipo === "usuario" ? "Usuário" : "Atendente"}
+                          {resposta.tipo === "usuario" ? "Usuário" : 
+                           resposta.tipo === "central" ? "Central" : "Atendente"}
                         </span>
                         <span className="text-sm text-muted-foreground">
                           · {formatDate(resposta.data_criacao)}
@@ -287,6 +310,18 @@ const DetalhesChamado = () => {
 
           <div className="space-y-3">
             <Label>Nova Resposta</Label>
+            <div className="space-y-2">
+              <Label>Tipo de Resposta</Label>
+              <Select value={tipoResposta} onValueChange={setTipoResposta}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="usuario">Resposta do Usuário</SelectItem>
+                  <SelectItem value="central">Resposta da Central</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Textarea
               placeholder="Digite sua resposta aqui..."
               value={novaResposta}
