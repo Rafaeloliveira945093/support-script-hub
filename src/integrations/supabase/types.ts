@@ -24,6 +24,7 @@ export type Database = {
           id: string
           nivel: number
           nivel_encaminhado: number | null
+          numero_chamado: string | null
           status: string
           titulo: string
           updated_at: string | null
@@ -38,6 +39,7 @@ export type Database = {
           id?: string
           nivel: number
           nivel_encaminhado?: number | null
+          numero_chamado?: string | null
           status?: string
           titulo: string
           updated_at?: string | null
@@ -52,6 +54,7 @@ export type Database = {
           id?: string
           nivel?: number
           nivel_encaminhado?: number | null
+          numero_chamado?: string | null
           status?: string
           titulo?: string
           updated_at?: string | null
@@ -60,6 +63,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "chamados_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      links_uteis: {
+        Row: {
+          created_at: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string | null
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "links_uteis_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"

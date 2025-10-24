@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, BarChart3, FileCode, LogOut, Moon, Sun } from "lucide-react";
+import { FileText, BarChart3, FileCode, LogOut, Moon, Sun, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -75,6 +75,9 @@ const Layout = () => {
     if (location.pathname.startsWith("/scripts")) {
       return "scripts";
     }
+    if (location.pathname.startsWith("/links-uteis")) {
+      return "links-uteis";
+    }
     return "chamados";
   };
 
@@ -136,6 +139,14 @@ const Layout = () => {
               >
                 <FileCode className="mr-2 h-4 w-4" />
                 Scripts de Atendimento
+              </TabsTrigger>
+              <TabsTrigger
+                value="links-uteis"
+                onClick={() => navigate("/links-uteis")}
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Links Úteis
               </TabsTrigger>
             </TabsList>
           </Tabs>

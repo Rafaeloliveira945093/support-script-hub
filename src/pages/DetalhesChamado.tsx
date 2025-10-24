@@ -14,12 +14,16 @@ import { useToast } from "@/hooks/use-toast";
 
 type Chamado = {
   id: string;
+  numero_chamado: string | null;
   titulo: string;
   status: string;
   nivel: number;
   estruturante: string;
   descricao_usuario: string;
   data_criacao: string;
+  data_encaminhamento: string | null;
+  data_encerramento: string | null;
+  nivel_encaminhado: number | null;
   updated_at: string;
 };
 
@@ -222,7 +226,7 @@ const DetalhesChamado = () => {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="font-mono">
-                  #{chamado.id.slice(0, 8)}
+                  {chamado.numero_chamado || `#${chamado.id.slice(0, 8)}`}
                 </Badge>
                 <CardTitle className="text-2xl">{chamado.titulo}</CardTitle>
               </div>

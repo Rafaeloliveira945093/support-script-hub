@@ -10,6 +10,7 @@ import NovoChamado from "./pages/NovoChamado";
 import DetalhesChamado from "./pages/DetalhesChamado";
 import Relatorios from "./pages/Relatorios";
 import Scripts from "./pages/Scripts";
+import LinksUteis from "./pages/LinksUteis";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="chamados/:id" element={<DetalhesChamado />} />
             <Route path="relatorios" element={<Relatorios />} />
             <Route path="scripts" element={<Scripts />} />
+            <Route path="links-uteis" element={<LinksUteis />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

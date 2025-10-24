@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const NovoChamado = () => {
   const [titulo, setTitulo] = useState("");
+  const [numeroChamado, setNumeroChamado] = useState("");
   const [nivel, setNivel] = useState<string>("");
   const [estruturante, setEstruturante] = useState("");
   const [descricao, setDescricao] = useState("");
@@ -40,10 +41,30 @@ const NovoChamado = () => {
         throw new Error("Usuário não autenticado");
       }
 
+      // Validar duplicidade de número de chamado se preenchido
+      if (numeroChamado.trim()) {
+        const { data: existingChamado } = await supabase
+          .from("chamados")
+          .select("id")
+          .eq("numero_chamado", numeroChamado.trim())
+          .maybeSingle();
+
+        if (existingChamado) {
+          toast({
+            title: "ID já existe",
+            description: "Este número de chamado já está em uso. Por favor, escolha outro.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const { data, error } = await supabase
         .from("chamados")
         .insert({
           titulo,
+          numero_chamado: numeroChamado.trim() || null,
           nivel: parseInt(nivel),
           estruturante,
           descricao_usuario: descricao,
@@ -97,6 +118,20 @@ const NovoChamado = () => {
                 onChange={(e) => setTitulo(e.target.value)}
                 disabled={isLoading}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="numeroChamado">ID do Chamado (Opcional)</Label>
+              <Input
+                id="numeroChamado"
+                placeholder="Ex: CH-2025-001"
+                value={numeroChamado}
+                onChange={(e) => setNumeroChamado(e.target.value)}
+                disabled={isLoading}
+              />
+              <p className="text-sm text-muted-foreground">
+                Deixe em branco para gerar automaticamente
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

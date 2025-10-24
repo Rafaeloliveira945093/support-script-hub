@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 
 type Chamado = {
   id: string;
+  numero_chamado: string | null;
   titulo: string;
   status: string;
   nivel: number;
@@ -35,6 +36,7 @@ const Chamados = () => {
     } else {
       const filtered = chamados.filter((chamado) =>
         chamado.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (chamado.numero_chamado && chamado.numero_chamado.toLowerCase().includes(searchTerm.toLowerCase())) ||
         chamado.titulo.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredChamados(filtered);
@@ -156,7 +158,7 @@ const Chamados = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant="outline" className="font-mono text-xs">
-                        #{chamado.id.slice(0, 8)}
+                        {chamado.numero_chamado || `#${chamado.id.slice(0, 8)}`}
                       </Badge>
                       <Badge className={getNivelColor(chamado.nivel)}>
                         Nível {chamado.nivel}
