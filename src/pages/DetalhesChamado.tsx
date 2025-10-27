@@ -470,8 +470,7 @@ const DetalhesChamado = () => {
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">
-                          {resposta.tipo === "usuario" ? "Usuário" : 
-                           resposta.tipo === "central" ? "Central" : "Atendente"}
+                          {resposta.tipo === "usuario" ? "Usuário" : "Central"}
                         </span>
                         <span className="text-sm text-muted-foreground">
                           · {formatDate(resposta.data_criacao)}
@@ -499,7 +498,7 @@ const DetalhesChamado = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="usuario">Resposta do Usuário</SelectItem>
-                  <SelectItem value="central">Resposta da Central</SelectItem>
+                  <SelectItem value="atendente">Resposta da Central</SelectItem>
                 </SelectContent>
               </Select>
             </div>

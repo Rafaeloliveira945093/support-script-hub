@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, BarChart3, FileCode, LogOut, Moon, Sun, ExternalLink } from "lucide-react";
+import { FileText, BarChart3, FileCode, LogOut, Moon, Sun, ExternalLink, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -78,6 +78,9 @@ const Layout = () => {
     if (location.pathname.startsWith("/links-uteis")) {
       return "links-uteis";
     }
+    if (location.pathname.startsWith("/configuracoes")) {
+      return "configuracoes";
+    }
     return "chamados";
   };
 
@@ -147,6 +150,14 @@ const Layout = () => {
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Links Úteis
+              </TabsTrigger>
+              <TabsTrigger
+                value="configuracoes"
+                onClick={() => navigate("/configuracoes")}
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Configurações
               </TabsTrigger>
             </TabsList>
           </Tabs>
