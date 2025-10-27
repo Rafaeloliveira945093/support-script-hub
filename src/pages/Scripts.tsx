@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileDown, Edit, Trash2, Filter, Search } from "lucide-react";
+import { Plus, FileDown, Edit, Trash2, Filter, Search, Copy, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 
@@ -26,6 +26,8 @@ const Scripts = () => {
   const [scripts, setScripts] = useState<Script[]>([]);
   const [filteredScripts, setFilteredScripts] = useState<Script[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [viewingScript, setViewingScript] = useState<Script | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingScript, setEditingScript] = useState<Script | null>(null);
   const [filtroEstruturante, setFiltroEstruturante] = useState<string>("all");
   const [filtroNivel, setFiltroNivel] = useState<string>("all");
@@ -244,6 +246,19 @@ const Scripts = () => {
     setEditingScript(null);
   };
 
+  const handleCopiarScript = (conteudo: string) => {
+    navigator.clipboard.writeText(conteudo);
+    toast({
+      title: "Script copiado!",
+      description: "O conteúdo foi copiado para a área de transferência",
+    });
+  };
+
+  const handleVisualizarScript = (script: Script) => {
+    setViewingScript(script);
+    setIsViewDialogOpen(true);
+  };
+
   const estruturantes = Array.from(new Set(scripts.map(s => s.estruturante)));
 
   return (
@@ -403,7 +418,7 @@ const Scripts = () => {
 
       <div className="grid gap-4">
         {filteredScripts.map((script) => (
-          <Card key={script.id}>
+          <Card key={script.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -419,21 +434,87 @@ const Scripts = () => {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(script)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleVisualizarScript(script)}
+                    title="Visualizar"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleCopiarScript(script.conteudo_script)}
+                    title="Copiar"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEdit(script)}
+                    title="Editar"
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(script.id)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(script.id)}
+                    title="Excluir"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{script.conteudo_script}</p>
-            </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Dialog para visualizar script */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              {viewingScript?.titulo_script}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => viewingScript && handleCopiarScript(viewingScript.conteudo_script)}
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Copiar Script
+              </Button>
+            </DialogTitle>
+            <DialogDescription>
+              <div className="flex gap-2 mt-2">
+                <Badge variant="outline">{viewingScript?.estruturante}</Badge>
+                <Badge>Nível {viewingScript?.nivel}</Badge>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {viewingScript?.descricao_script && (
+              <div>
+                <Label className="text-sm font-semibold">Descrição</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {viewingScript.descricao_script}
+                </p>
+              </div>
+            )}
+            <div>
+              <Label className="text-sm font-semibold">Conteúdo do Script</Label>
+              <div className="mt-2 p-4 bg-muted rounded-lg">
+                <pre className="text-sm whitespace-pre-wrap font-mono">
+                  {viewingScript?.conteudo_script}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {filteredScripts.length === 0 && (
         <Card>

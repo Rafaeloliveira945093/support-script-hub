@@ -9,8 +9,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Loader2, Send, User } from "lucide-react";
+import { ArrowLeft, Loader2, Send, User, ExternalLink, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+type Link = {
+  nome: string;
+  url: string;
+};
 
 type Chamado = {
   id: string;
@@ -25,6 +30,7 @@ type Chamado = {
   data_encerramento: string | null;
   nivel_encaminhado: number | null;
   updated_at: string;
+  links: Link[];
 };
 
 type Resposta = {
@@ -45,18 +51,37 @@ const DetalhesChamado = () => {
   const [novaResposta, setNovaResposta] = useState("");
   const [tipoResposta, setTipoResposta] = useState<string>("usuario");
   const [status, setStatus] = useState("");
+  const [statusOpcoes, setStatusOpcoes] = useState<string[]>([]);
   const [nivel, setNivel] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [previousStatus, setPreviousStatus] = useState("");
   const [previousNivel, setPreviousNivel] = useState("");
+  const [isEditingChamado, setIsEditingChamado] = useState(false);
+  const [editTitulo, setEditTitulo] = useState("");
+  const [editDescricao, setEditDescricao] = useState("");
 
   useEffect(() => {
     if (id) {
       fetchChamado();
       fetchRespostas();
+      fetchStatusOpcoes();
     }
   }, [id]);
+
+  const fetchStatusOpcoes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("status_opcoes")
+        .select("nome")
+        .order("nome");
+
+      if (error) throw error;
+      setStatusOpcoes(data?.map(s => s.nome) || []);
+    } catch (error: any) {
+      console.error("Erro ao carregar status:", error);
+    }
+  };
 
   useEffect(() => {
     const saveTimeout = setTimeout(() => {
@@ -78,11 +103,16 @@ const DetalhesChamado = () => {
 
       if (error) throw error;
 
-      setChamado(data);
+      setChamado({
+        ...data,
+        links: (data.links as any) || []
+      });
       setStatus(data.status);
       setNivel(data.nivel.toString());
       setPreviousStatus(data.status);
       setPreviousNivel(data.nivel.toString());
+      setEditTitulo(data.titulo);
+      setEditDescricao(data.descricao_usuario);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar chamado",
@@ -195,6 +225,70 @@ const DetalhesChamado = () => {
     }
   };
 
+  const handleSalvarEdicaoChamado = async () => {
+    if (!chamado || !editTitulo.trim() || !editDescricao.trim()) {
+      toast({
+        title: "Erro",
+        description: "Título e descrição são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("chamados")
+        .update({
+          titulo: editTitulo.trim(),
+          descricao_usuario: editDescricao.trim(),
+        })
+        .eq("id", chamado.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Chamado atualizado!",
+        description: "As alterações foram salvas",
+      });
+
+      setIsEditingChamado(false);
+      fetchChamado();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar chamado",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExcluirChamado = async () => {
+    if (!chamado) return;
+    if (!confirm("Tem certeza que deseja excluir este chamado? Esta ação não pode ser desfeita.")) return;
+
+    try {
+      const { error } = await supabase
+        .from("chamados")
+        .delete()
+        .eq("id", chamado.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Chamado excluído!",
+        description: "O chamado foi removido com sucesso",
+      });
+
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir chamado",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("pt-BR", {
       day: "2-digit",
@@ -223,16 +317,61 @@ const DetalhesChamado = () => {
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
-            <div className="space-y-2">
+            <div className="space-y-2 flex-1">
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="font-mono">
                   {chamado.numero_chamado || `#${chamado.id.slice(0, 8)}`}
                 </Badge>
-                <CardTitle className="text-2xl">{chamado.titulo}</CardTitle>
+                {isEditingChamado ? (
+                  <Input
+                    value={editTitulo}
+                    onChange={(e) => setEditTitulo(e.target.value)}
+                    className="text-2xl font-bold"
+                  />
+                ) : (
+                  <CardTitle className="text-2xl">{chamado.titulo}</CardTitle>
+                )}
               </div>
               <CardDescription>
                 Criado em {formatDate(chamado.data_criacao)}
               </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              {isEditingChamado ? (
+                <>
+                  <Button size="sm" onClick={handleSalvarEdicaoChamado}>
+                    Salvar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditingChamado(false);
+                      setEditTitulo(chamado.titulo);
+                      setEditDescricao(chamado.descricao_usuario);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setIsEditingChamado(true)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={handleExcluirChamado}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -240,11 +379,18 @@ const DetalhesChamado = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Status</Label>
-              <Input
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                placeholder="Ex: Aberto, Em andamento, Fechado"
-              />
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOpcoes.map((st) => (
+                    <SelectItem key={st} value={st}>
+                      {st}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Nível</Label>
@@ -268,13 +414,44 @@ const DetalhesChamado = () => {
 
           <div className="space-y-2">
             <Label>Descrição Original</Label>
-            <Textarea
-              value={chamado.descricao_usuario}
-              disabled
-              rows={4}
-              className="resize-none"
-            />
+            {isEditingChamado ? (
+              <Textarea
+                value={editDescricao}
+                onChange={(e) => setEditDescricao(e.target.value)}
+                rows={4}
+              />
+            ) : (
+              <Textarea
+                value={chamado.descricao_usuario}
+                disabled
+                rows={4}
+                className="resize-none"
+              />
+            )}
           </div>
+
+          {chamado.links && chamado.links.length > 0 && (
+            <div className="space-y-2">
+              <Label>Links Relacionados</Label>
+              <div className="space-y-2">
+                {chamado.links.map((link, index) => (
+                  <a
+                    key={index}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-2 rounded-lg border hover:bg-accent transition-colors"
+                  >
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{link.nome}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {new URL(link.url).hostname}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           <Separator />
 

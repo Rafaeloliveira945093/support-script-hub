@@ -20,12 +20,27 @@ const Relatorios = () => {
     porEstruturante: {},
     porNivel: {},
   });
+  const [totalScripts, setTotalScripts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchStats();
+    fetchScriptsCount();
   }, []);
+
+  const fetchScriptsCount = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("scripts")
+        .select("id");
+
+      if (error) throw error;
+      setTotalScripts(data?.length || 0);
+    } catch (error: any) {
+      console.error("Erro ao carregar scripts:", error);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -139,7 +154,7 @@ const Relatorios = () => {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total de Chamados</CardTitle>
@@ -147,6 +162,16 @@ const Relatorios = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total de Scripts</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalScripts}</div>
           </CardContent>
         </Card>
 

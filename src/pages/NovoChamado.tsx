@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,29 +7,101 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Trash2, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+type Link = {
+  nome: string;
+  url: string;
+};
 
 const NovoChamado = () => {
   const [titulo, setTitulo] = useState("");
   const [numeroChamado, setNumeroChamado] = useState("");
   const [nivel, setNivel] = useState<string>("");
   const [estruturante, setEstruturante] = useState("");
+  const [status, setStatus] = useState("");
   const [descricao, setDescricao] = useState("");
+  const [links, setLinks] = useState<Link[]>([]);
+  const [estruturantes, setEstruturantes] = useState<string[]>([]);
+  const [statusOpcoes, setStatusOpcoes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  useEffect(() => {
+    fetchEstruturantes();
+    fetchStatusOpcoes();
+  }, []);
+
+  const fetchEstruturantes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("estruturantes")
+        .select("nome")
+        .order("nome");
+
+      if (error) throw error;
+      setEstruturantes(data?.map(e => e.nome) || []);
+    } catch (error: any) {
+      console.error("Erro ao carregar estruturantes:", error);
+    }
+  };
+
+  const fetchStatusOpcoes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("status_opcoes")
+        .select("nome")
+        .order("nome");
+
+      if (error) throw error;
+      setStatusOpcoes(data?.map(s => s.nome) || []);
+      if (data && data.length > 0) {
+        setStatus(data[0].nome);
+      }
+    } catch (error: any) {
+      console.error("Erro ao carregar status:", error);
+    }
+  };
+
+  const adicionarLink = () => {
+    setLinks([...links, { nome: "", url: "" }]);
+  };
+
+  const removerLink = (index: number) => {
+    setLinks(links.filter((_, i) => i !== index));
+  };
+
+  const atualizarLink = (index: number, campo: keyof Link, valor: string) => {
+    const novosLinks = [...links];
+    novosLinks[index][campo] = valor;
+    setLinks(novosLinks);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!titulo || !nivel || !estruturante || !descricao) {
+    if (!titulo || !nivel || !estruturante || !status || !descricao) {
       toast({
         title: "Erro",
-        description: "Por favor, preencha todos os campos",
+        description: "Por favor, preencha todos os campos obrigatórios",
         variant: "destructive",
       });
       return;
+    }
+
+    // Validar links
+    const linksValidos = links.filter(link => link.nome.trim() && link.url.trim());
+    for (const link of linksValidos) {
+      if (!link.url.startsWith("http://") && !link.url.startsWith("https://")) {
+        toast({
+          title: "Erro",
+          description: "Todos os links devem começar com http:// ou https://",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -60,6 +132,8 @@ const NovoChamado = () => {
         }
       }
 
+      const linksValidos = links.filter(link => link.nome.trim() && link.url.trim());
+
       const { data, error } = await supabase
         .from("chamados")
         .insert({
@@ -69,7 +143,8 @@ const NovoChamado = () => {
           estruturante,
           descricao_usuario: descricao,
           user_id: user.id,
-          status: "Aberto",
+          status,
+          links: linksValidos,
         })
         .select()
         .single();
@@ -134,7 +209,7 @@ const NovoChamado = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="nivel">Nível *</Label>
                 <Select value={nivel} onValueChange={setNivel} disabled={isLoading}>
@@ -151,13 +226,34 @@ const NovoChamado = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="estruturante">Estruturante *</Label>
-                <Input
-                  id="estruturante"
-                  placeholder="Ex: Financeiro, TI, RH"
-                  value={estruturante}
-                  onChange={(e) => setEstruturante(e.target.value)}
-                  disabled={isLoading}
-                />
+                <Select value={estruturante} onValueChange={setEstruturante} disabled={isLoading}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {estruturantes.map((est) => (
+                      <SelectItem key={est} value={est}>
+                        {est}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status">Status *</Label>
+                <Select value={status} onValueChange={setStatus} disabled={isLoading}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOpcoes.map((st) => (
+                      <SelectItem key={st} value={st}>
+                        {st}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -171,6 +267,52 @@ const NovoChamado = () => {
                 rows={6}
                 disabled={isLoading}
               />
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Links (Opcional)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={adicionarLink}
+                  disabled={isLoading}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar Link
+                </Button>
+              </div>
+
+              {links.map((link, index) => (
+                <div key={index} className="flex gap-2 items-end">
+                  <div className="flex-1 space-y-2">
+                    <Input
+                      placeholder="Nome do Link"
+                      value={link.nome}
+                      onChange={(e) => atualizarLink(index, "nome", e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <Input
+                      placeholder="https://exemplo.com"
+                      value={link.url}
+                      onChange={(e) => atualizarLink(index, "url", e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removerLink(index)}
+                    disabled={isLoading}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
             </div>
 
             <div className="flex gap-3 pt-4">

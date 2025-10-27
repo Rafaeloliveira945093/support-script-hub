@@ -11,6 +11,7 @@ import DetalhesChamado from "./pages/DetalhesChamado";
 import Relatorios from "./pages/Relatorios";
 import Scripts from "./pages/Scripts";
 import LinksUteis from "./pages/LinksUteis";
+import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="relatorios" element={<Relatorios />} />
             <Route path="scripts" element={<Scripts />} />
             <Route path="links-uteis" element={<LinksUteis />} />
+            <Route path="configuracoes" element={<Configuracoes />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -22,6 +22,7 @@ export type Database = {
           descricao_usuario: string
           estruturante: string
           id: string
+          links: Json | null
           nivel: number
           nivel_encaminhado: number | null
           numero_chamado: string | null
@@ -37,6 +38,7 @@ export type Database = {
           descricao_usuario: string
           estruturante: string
           id?: string
+          links?: Json | null
           nivel: number
           nivel_encaminhado?: number | null
           numero_chamado?: string | null
@@ -52,6 +54,7 @@ export type Database = {
           descricao_usuario?: string
           estruturante?: string
           id?: string
+          links?: Json | null
           nivel?: number
           nivel_encaminhado?: number | null
           numero_chamado?: string | null
@@ -69,6 +72,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      estruturantes: {
+        Row: {
+          created_at: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       links_uteis: {
         Row: {
@@ -211,6 +238,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      status_opcoes: {
+        Row: {
+          created_at: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
