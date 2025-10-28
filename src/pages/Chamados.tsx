@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Clock, AlertCircle, Search } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Clock, AlertCircle, Search, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Chamado = {
@@ -23,25 +24,49 @@ const Chamados = () => {
   const [filteredChamados, setFilteredChamados] = useState<Chamado[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [estruturantes, setEstruturantes] = useState<string[]>([]);
+  const [statusOpcoes, setStatusOpcoes] = useState<string[]>([]);
+  const [filtroNivel, setFiltroNivel] = useState<string>("");
+  const [filtroEstruturante, setFiltroEstruturante] = useState<string>("");
+  const [filtroStatus, setFiltroStatus] = useState<string>("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchChamados();
+    fetchEstruturantes();
+    fetchStatusOpcoes();
   }, []);
 
   useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setFilteredChamados(chamados);
-    } else {
-      const filtered = chamados.filter((chamado) =>
+    let filtered = chamados;
+
+    // Aplicar busca por texto
+    if (searchTerm.trim() !== "") {
+      filtered = filtered.filter((chamado) =>
         chamado.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (chamado.numero_chamado && chamado.numero_chamado.toLowerCase().includes(searchTerm.toLowerCase())) ||
         chamado.titulo.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredChamados(filtered);
     }
-  }, [searchTerm, chamados]);
+
+    // Aplicar filtro de nível
+    if (filtroNivel !== "") {
+      filtered = filtered.filter((chamado) => chamado.nivel === parseInt(filtroNivel));
+    }
+
+    // Aplicar filtro de estruturante
+    if (filtroEstruturante !== "") {
+      filtered = filtered.filter((chamado) => chamado.estruturante === filtroEstruturante);
+    }
+
+    // Aplicar filtro de status
+    if (filtroStatus !== "") {
+      filtered = filtered.filter((chamado) => chamado.status === filtroStatus);
+    }
+
+    setFilteredChamados(filtered);
+  }, [searchTerm, chamados, filtroNivel, filtroEstruturante, filtroStatus]);
 
   const fetchChamados = async () => {
     try {
@@ -64,6 +89,47 @@ const Chamados = () => {
       setIsLoading(false);
     }
   };
+
+  const fetchEstruturantes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("estruturantes")
+        .select("nome")
+        .order("nome");
+
+      if (error) throw error;
+
+      const nomes = data?.map((item) => item.nome) || [];
+      setEstruturantes(nomes);
+    } catch (error: any) {
+      console.error("Erro ao carregar estruturantes:", error);
+    }
+  };
+
+  const fetchStatusOpcoes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("status_opcoes")
+        .select("nome")
+        .order("nome");
+
+      if (error) throw error;
+
+      const nomes = data?.map((item) => item.nome) || [];
+      setStatusOpcoes(nomes);
+    } catch (error: any) {
+      console.error("Erro ao carregar status:", error);
+    }
+  };
+
+  const limparFiltros = () => {
+    setFiltroNivel("");
+    setFiltroEstruturante("");
+    setFiltroStatus("");
+    setSearchTerm("");
+  };
+
+  const hasActiveFilters = filtroNivel !== "" || filtroEstruturante !== "" || filtroStatus !== "" || searchTerm !== "";
 
   const getNivelColor = (nivel: number) => {
     switch (nivel) {
@@ -111,15 +177,73 @@ const Chamados = () => {
         </Button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por ID ou Título..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por ID ou Título..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <Select value={filtroNivel} onValueChange={setFiltroNivel}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todos os Níveis" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos os Níveis</SelectItem>
+                <SelectItem value="1">Nível 1</SelectItem>
+                <SelectItem value="2">Nível 2</SelectItem>
+                <SelectItem value="3">Nível 3</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filtroEstruturante} onValueChange={setFiltroEstruturante}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todos os Estruturantes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos os Estruturantes</SelectItem>
+                {estruturantes.map((estruturante) => (
+                  <SelectItem key={estruturante} value={estruturante}>
+                    {estruturante}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todos os Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos os Status</SelectItem>
+                {statusOpcoes.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {hasActiveFilters && (
+            <div className="mt-4 flex justify-end">
+              <Button variant="outline" size="sm" onClick={limparFiltros}>
+                <X className="mr-2 h-4 w-4" />
+                Limpar Filtros
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {filteredChamados.length === 0 && chamados.length === 0 ? (
         <Card>
