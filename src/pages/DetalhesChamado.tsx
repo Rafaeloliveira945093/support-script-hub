@@ -9,8 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Loader2, Send, User, ExternalLink, Edit, Trash2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { ArrowLeft, Loader2, Send, User, ExternalLink, Edit, Trash2, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 type Link = {
   nome: string;
@@ -60,6 +64,9 @@ const DetalhesChamado = () => {
   const [isEditingChamado, setIsEditingChamado] = useState(false);
   const [editTitulo, setEditTitulo] = useState("");
   const [editDescricao, setEditDescricao] = useState("");
+  const [dataCriacao, setDataCriacao] = useState<Date | undefined>(undefined);
+  const [dataEncaminhamento, setDataEncaminhamento] = useState<Date | undefined>(undefined);
+  const [dataEncerramento, setDataEncerramento] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (id) {
@@ -113,6 +120,9 @@ const DetalhesChamado = () => {
       setPreviousNivel(data.nivel.toString());
       setEditTitulo(data.titulo);
       setEditDescricao(data.descricao_usuario);
+      setDataCriacao(data.data_criacao ? new Date(data.data_criacao) : new Date());
+      setDataEncaminhamento(data.data_encaminhamento ? new Date(data.data_encaminhamento) : undefined);
+      setDataEncerramento(data.data_encerramento ? new Date(data.data_encerramento) : undefined);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar chamado",
@@ -235,12 +245,24 @@ const DetalhesChamado = () => {
       return;
     }
 
+    if (!dataCriacao) {
+      toast({
+        title: "Erro",
+        description: "Data de abertura é obrigatória",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("chamados")
         .update({
           titulo: editTitulo.trim(),
           descricao_usuario: editDescricao.trim(),
+          data_criacao: dataCriacao.toISOString(),
+          data_encaminhamento: dataEncaminhamento ? dataEncaminhamento.toISOString() : null,
+          data_encerramento: dataEncerramento ? dataEncerramento.toISOString() : null,
         })
         .eq("id", chamado.id);
 
@@ -411,6 +433,124 @@ const DetalhesChamado = () => {
             <Label>Estruturante</Label>
             <Input value={chamado.estruturante} disabled />
           </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Datas do Chamado</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Data de Abertura *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dataCriacao && "text-muted-foreground"
+                      )}
+                      disabled={!isEditingChamado}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dataCriacao ? format(dataCriacao, "dd/MM/yyyy HH:mm") : "Selecione a data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dataCriacao}
+                      onSelect={setDataCriacao}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Data de Encaminhamento</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dataEncaminhamento && "text-muted-foreground"
+                      )}
+                      disabled={!isEditingChamado}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dataEncaminhamento ? format(dataEncaminhamento, "dd/MM/yyyy HH:mm") : "Não definida"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dataEncaminhamento}
+                      onSelect={setDataEncaminhamento}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                    {dataEncaminhamento && (
+                      <div className="p-3 border-t">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDataEncaminhamento(undefined)}
+                          className="w-full"
+                        >
+                          Limpar data
+                        </Button>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Data de Encerramento</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dataEncerramento && "text-muted-foreground"
+                      )}
+                      disabled={!isEditingChamado}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dataEncerramento ? format(dataEncerramento, "dd/MM/yyyy HH:mm") : "Não definida"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dataEncerramento}
+                      onSelect={setDataEncerramento}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                    {dataEncerramento && (
+                      <div className="p-3 border-t">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDataEncerramento(undefined)}
+                          className="w-full"
+                        >
+                          Limpar data
+                        </Button>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
 
           <div className="space-y-2">
             <Label>Descrição Original</Label>
