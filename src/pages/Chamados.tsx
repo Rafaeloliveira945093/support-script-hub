@@ -26,9 +26,9 @@ const Chamados = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [estruturantes, setEstruturantes] = useState<string[]>([]);
   const [statusOpcoes, setStatusOpcoes] = useState<string[]>([]);
-  const [filtroNivel, setFiltroNivel] = useState<string>("");
-  const [filtroEstruturante, setFiltroEstruturante] = useState<string>("");
-  const [filtroStatus, setFiltroStatus] = useState<string>("");
+  const [filtroNivel, setFiltroNivel] = useState<string>("all");
+  const [filtroEstruturante, setFiltroEstruturante] = useState<string>("all");
+  const [filtroStatus, setFiltroStatus] = useState<string>("all");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -51,17 +51,17 @@ const Chamados = () => {
     }
 
     // Aplicar filtro de nível
-    if (filtroNivel !== "") {
+    if (filtroNivel !== "all") {
       filtered = filtered.filter((chamado) => chamado.nivel === parseInt(filtroNivel));
     }
 
     // Aplicar filtro de estruturante
-    if (filtroEstruturante !== "") {
+    if (filtroEstruturante !== "all") {
       filtered = filtered.filter((chamado) => chamado.estruturante === filtroEstruturante);
     }
 
     // Aplicar filtro de status
-    if (filtroStatus !== "") {
+    if (filtroStatus !== "all") {
       filtered = filtered.filter((chamado) => chamado.status === filtroStatus);
     }
 
@@ -123,13 +123,13 @@ const Chamados = () => {
   };
 
   const limparFiltros = () => {
-    setFiltroNivel("");
-    setFiltroEstruturante("");
-    setFiltroStatus("");
+    setFiltroNivel("all");
+    setFiltroEstruturante("all");
+    setFiltroStatus("all");
     setSearchTerm("");
   };
 
-  const hasActiveFilters = filtroNivel !== "" || filtroEstruturante !== "" || filtroStatus !== "" || searchTerm !== "";
+  const hasActiveFilters = filtroNivel !== "all" || filtroEstruturante !== "all" || filtroStatus !== "all" || searchTerm !== "";
 
   const getNivelColor = (nivel: number) => {
     switch (nivel) {
@@ -198,7 +198,7 @@ const Chamados = () => {
                 <SelectValue placeholder="Todos os Níveis" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os Níveis</SelectItem>
+                <SelectItem value="all">Todos os Níveis</SelectItem>
                 <SelectItem value="1">Nível 1</SelectItem>
                 <SelectItem value="2">Nível 2</SelectItem>
                 <SelectItem value="3">Nível 3</SelectItem>
@@ -210,7 +210,7 @@ const Chamados = () => {
                 <SelectValue placeholder="Todos os Estruturantes" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os Estruturantes</SelectItem>
+                <SelectItem value="all">Todos os Estruturantes</SelectItem>
                 {estruturantes.map((estruturante) => (
                   <SelectItem key={estruturante} value={estruturante}>
                     {estruturante}
@@ -224,7 +224,7 @@ const Chamados = () => {
                 <SelectValue placeholder="Todos os Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os Status</SelectItem>
+                <SelectItem value="all">Todos os Status</SelectItem>
                 {statusOpcoes.map((status) => (
                   <SelectItem key={status} value={status}>
                     {status}
