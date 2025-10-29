@@ -108,6 +108,7 @@ const Scripts = () => {
       if (!user) throw new Error("Usuário não autenticado");
 
       if (editingScript) {
+        console.log("Atualizando script:", editingScript.id, formData);
         const { error } = await supabase
           .from("scripts")
           .update({
@@ -116,8 +117,12 @@ const Scripts = () => {
           })
           .eq("id", editingScript.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Erro ao atualizar:", error);
+          throw error;
+        }
 
+        console.log("Script atualizado com sucesso");
         toast({
           title: "Script atualizado!",
           description: "As alterações foram salvas",
@@ -152,6 +157,7 @@ const Scripts = () => {
   };
 
   const handleEdit = (script: Script) => {
+    console.log("Editando script:", script.id);
     setEditingScript(script);
     setFormData({
       titulo_script: script.titulo_script,
