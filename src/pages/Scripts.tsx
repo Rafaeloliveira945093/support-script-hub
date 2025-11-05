@@ -263,17 +263,17 @@ const Scripts = () => {
   const estruturantes = Array.from(new Set(scripts.map(s => s.estruturante)));
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
         <div>
-          <h2 className="text-3xl font-bold">Scripts de Atendimento</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-2xl sm:text-3xl font-bold">Scripts de Atendimento</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Total de scripts cadastrados: <span className="font-semibold">{filteredScripts.length}</span>
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={handleExportarPDF}>
-            <FileDown className="mr-2 h-4 w-4" />
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <Button variant="outline" onClick={handleExportarPDF} className="flex-1 sm:flex-none text-xs sm:text-sm">
+            <FileDown className="mr-1 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Exportar PDF
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
@@ -281,17 +281,17 @@ const Scripts = () => {
             if (!open) resetForm();
           }}>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
+              <Button className="flex-1 sm:flex-none text-xs sm:text-sm">
+                <Plus className="mr-1 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Novo Script
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>
+                <DialogTitle className="text-lg sm:text-xl">
                   {editingScript ? "Editar Script" : "Novo Script"}
                 </DialogTitle>
-                <DialogDescription>
+                <DialogDescription className="text-xs sm:text-sm">
                   Preencha as informações do script de atendimento
                 </DialogDescription>
               </DialogHeader>
@@ -416,55 +416,59 @@ const Scripts = () => {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4">
+      <div className="grid gap-3 sm:gap-4">
         {filteredScripts.map((script) => (
           <Card key={script.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="outline">{script.estruturante}</Badge>
-                    <Badge>Nível {script.nivel}</Badge>
+            <CardHeader className="p-3 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <Badge variant="outline" className="text-xs">{script.estruturante}</Badge>
+                    <Badge className="text-xs">Nível {script.nivel}</Badge>
                   </div>
-                  <CardTitle>{script.titulo_script}</CardTitle>
+                  <CardTitle className="text-base sm:text-lg break-words">{script.titulo_script}</CardTitle>
                   {script.descricao_script && (
-                    <CardDescription className="mt-2">
+                    <CardDescription className="mt-2 text-xs sm:text-sm break-words">
                       {script.descricao_script}
                     </CardDescription>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1 sm:gap-2 flex-shrink-0">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => handleVisualizarScript(script)}
                     title="Visualizar"
+                    className="h-8 w-8 sm:h-10 sm:w-10"
                   >
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => handleCopiarScript(script.conteudo_script)}
                     title="Copiar"
+                    className="h-8 w-8 sm:h-10 sm:w-10"
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => handleEdit(script)}
                     title="Editar"
+                    className="h-8 w-8 sm:h-10 sm:w-10"
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDelete(script.id)}
                     title="Excluir"
+                    className="h-8 w-8 sm:h-10 sm:w-10"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </Button>
                 </div>
               </div>
@@ -475,16 +479,17 @@ const Scripts = () => {
 
       {/* Dialog para visualizar script */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              {viewingScript?.titulo_script}
+            <DialogTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <span className="text-base sm:text-lg break-words">{viewingScript?.titulo_script}</span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => viewingScript && handleCopiarScript(viewingScript.conteudo_script)}
+                className="w-full sm:w-auto text-xs sm:text-sm"
               >
-                <Copy className="mr-2 h-4 w-4" />
+                <Copy className="mr-1 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Copiar Script
               </Button>
             </DialogTitle>
@@ -506,7 +511,10 @@ const Scripts = () => {
             )}
             <div>
               <Label className="text-sm font-semibold">Conteúdo do Script</Label>
-              <div className="mt-2 p-4 bg-muted rounded-lg prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: viewingScript?.conteudo_script || '' }} />
+              <div 
+                className="mt-2 p-4 bg-muted rounded-lg prose prose-sm max-w-none overflow-auto" 
+                dangerouslySetInnerHTML={{ __html: viewingScript?.conteudo_script || '' }} 
+              />
             </div>
           </div>
         </DialogContent>
