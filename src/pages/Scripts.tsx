@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, FileDown, Edit, Trash2, Filter, Search, Copy, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 type Script = {
   id: string;
@@ -343,11 +344,10 @@ const Scripts = () => {
 
                 <div className="space-y-2">
                   <Label>Conteúdo *</Label>
-                  <Textarea
-                    value={formData.conteudo_script}
-                    onChange={(e) => setFormData({...formData, conteudo_script: e.target.value})}
+                  <RichTextEditor
+                    content={formData.conteudo_script}
+                    onChange={(html) => setFormData({...formData, conteudo_script: html})}
                     placeholder="Conteúdo completo do script"
-                    rows={8}
                   />
                 </div>
 
@@ -506,11 +506,7 @@ const Scripts = () => {
             )}
             <div>
               <Label className="text-sm font-semibold">Conteúdo do Script</Label>
-              <div className="mt-2 p-4 bg-muted rounded-lg">
-                <pre className="text-sm whitespace-pre-wrap font-mono">
-                  {viewingScript?.conteudo_script}
-                </pre>
-              </div>
+              <div className="mt-2 p-4 bg-muted rounded-lg prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: viewingScript?.conteudo_script || '' }} />
             </div>
           </div>
         </DialogContent>

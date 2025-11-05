@@ -100,7 +100,7 @@ const Relatorios = () => {
           .join("\n\n");
 
         return {
-          ID: chamado.id.slice(0, 8),
+          ID: chamado.numero_chamado || chamado.id.slice(0, 8),
           Título: chamado.titulo,
           Status: chamado.status,
           Nível: chamado.nivel,

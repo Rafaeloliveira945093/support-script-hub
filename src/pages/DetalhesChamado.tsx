@@ -11,10 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ArrowLeft, Loader2, Send, User, ExternalLink, Edit, Trash2, CalendarIcon } from "lucide-react";
+import { ArrowLeft, Loader2, Send, User, ExternalLink, Edit, Trash2, CalendarIcon, StickyNote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 type Link = {
   nome: string;
@@ -35,6 +36,7 @@ type Chamado = {
   nivel_encaminhado: number | null;
   updated_at: string;
   links: Link[];
+  anotacoes_internas?: string;
 };
 
 type Resposta = {
@@ -67,6 +69,8 @@ const DetalhesChamado = () => {
   const [dataCriacao, setDataCriacao] = useState<Date | undefined>(undefined);
   const [dataEncaminhamento, setDataEncaminhamento] = useState<Date | undefined>(undefined);
   const [dataEncerramento, setDataEncerramento] = useState<Date | undefined>(undefined);
+  const [anotacoesInternas, setAnotacoesInternas] = useState("");
+  const [isSavingAnotacoes, setIsSavingAnotacoes] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -123,6 +127,7 @@ const DetalhesChamado = () => {
       setDataCriacao(data.data_criacao ? new Date(data.data_criacao) : new Date());
       setDataEncaminhamento(data.data_encaminhamento ? new Date(data.data_encaminhamento) : undefined);
       setDataEncerramento(data.data_encerramento ? new Date(data.data_encerramento) : undefined);
+      setAnotacoesInternas(data.anotacoes_internas || "");
     } catch (error: any) {
       toast({
         title: "Erro ao carregar chamado",
@@ -308,6 +313,33 @@ const DetalhesChamado = () => {
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleSalvarAnotacoes = async () => {
+    if (!chamado) return;
+
+    setIsSavingAnotacoes(true);
+    try {
+      const { error } = await supabase
+        .from("chamados")
+        .update({ anotacoes_internas: anotacoesInternas })
+        .eq("id", chamado.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Anotações salvas!",
+        description: "As anotações internas foram atualizadas",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao salvar anotações",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingAnotacoes(false);
     }
   };
 
@@ -616,11 +648,11 @@ const DetalhesChamado = () => {
                           · {formatDate(resposta.data_criacao)}
                         </span>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="whitespace-pre-wrap">{resposta.conteudo}</p>
-                    </CardContent>
-                  </Card>
+                     </CardHeader>
+                     <CardContent>
+                       <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: resposta.conteudo }} />
+                     </CardContent>
+                   </Card>
                 ))}
               </div>
             )}
@@ -642,11 +674,10 @@ const DetalhesChamado = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Textarea
+            <RichTextEditor
+              content={novaResposta}
+              onChange={setNovaResposta}
               placeholder="Digite sua resposta aqui..."
-              value={novaResposta}
-              onChange={(e) => setNovaResposta(e.target.value)}
-              rows={4}
             />
             <Button onClick={handleEnviarResposta} disabled={isSaving}>
               {isSaving ? (
@@ -656,6 +687,32 @@ const DetalhesChamado = () => {
               )}
               Enviar Resposta
             </Button>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <StickyNote className="h-4 w-4" />
+                Anotações Internas
+              </Label>
+              <Button 
+                size="sm" 
+                onClick={handleSalvarAnotacoes}
+                disabled={isSavingAnotacoes}
+              >
+                {isSavingAnotacoes ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Salvar Anotações
+              </Button>
+            </div>
+            <RichTextEditor
+              content={anotacoesInternas}
+              onChange={setAnotacoesInternas}
+              placeholder="Adicione anotações internas que não aparecem nas respostas do chamado..."
+            />
           </div>
         </CardContent>
       </Card>

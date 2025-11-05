@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       chamados: {
         Row: {
+          anotacoes_internas: string | null
           data_criacao: string | null
           data_encaminhamento: string | null
           data_encerramento: string | null
@@ -32,6 +33,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          anotacoes_internas?: string | null
           data_criacao?: string | null
           data_encaminhamento?: string | null
           data_encerramento?: string | null
@@ -48,6 +50,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          anotacoes_internas?: string | null
           data_criacao?: string | null
           data_encaminhamento?: string | null
           data_encerramento?: string | null
