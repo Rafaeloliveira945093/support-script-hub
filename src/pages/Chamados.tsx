@@ -19,13 +19,18 @@ type Chamado = {
   data_criacao: string;
 };
 
+type StatusOpcao = {
+  nome: string;
+  cor: string;
+};
+
 const Chamados = () => {
   const [chamados, setChamados] = useState<Chamado[]>([]);
   const [filteredChamados, setFilteredChamados] = useState<Chamado[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [estruturantes, setEstruturantes] = useState<string[]>([]);
-  const [statusOpcoes, setStatusOpcoes] = useState<string[]>([]);
+  const [statusOpcoes, setStatusOpcoes] = useState<StatusOpcao[]>([]);
   const [filtroNivel, setFiltroNivel] = useState<string>("all");
   const [filtroEstruturante, setFiltroEstruturante] = useState<string>("all");
   const [filtroStatus, setFiltroStatus] = useState<string>("all");
@@ -110,13 +115,12 @@ const Chamados = () => {
     try {
       const { data, error } = await supabase
         .from("status_opcoes")
-        .select("nome")
+        .select("nome, cor")
         .order("nome");
 
       if (error) throw error;
 
-      const nomes = data?.map((item) => item.nome) || [];
-      setStatusOpcoes(nomes);
+      setStatusOpcoes(data || []);
     } catch (error: any) {
       console.error("Erro ao carregar status:", error);
     }
@@ -152,6 +156,11 @@ const Chamados = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const getStatusColor = (statusNome: string) => {
+    const statusOpcao = statusOpcoes.find(s => s.nome === statusNome);
+    return statusOpcao?.cor || "#9ca3af";
   };
 
   if (isLoading) {
@@ -226,8 +235,8 @@ const Chamados = () => {
               <SelectContent>
                 <SelectItem value="all">Todos os Status</SelectItem>
                 {statusOpcoes.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
+                  <SelectItem key={status.nome} value={status.nome}>
+                    {status.nome}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -274,8 +283,9 @@ const Chamados = () => {
           {filteredChamados.map((chamado) => (
             <Card
               key={chamado.id}
-              className="hover:shadow-md transition-shadow cursor-pointer"
+              className="hover:shadow-md transition-shadow cursor-pointer border-l-4"
               onClick={() => navigate(`/chamados/${chamado.id}`)}
+              style={{ borderLeftColor: getStatusColor(chamado.status) }}
             >
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -287,7 +297,12 @@ const Chamados = () => {
                       <Badge className={getNivelColor(chamado.nivel)}>
                         Nível {chamado.nivel}
                       </Badge>
-                      <Badge variant="secondary">{chamado.status}</Badge>
+                      <Badge 
+                        variant="secondary"
+                        style={{ backgroundColor: getStatusColor(chamado.status), color: '#fff' }}
+                      >
+                        {chamado.status}
+                      </Badge>
                     </div>
                     <CardTitle className="text-xl">{chamado.titulo}</CardTitle>
                     <CardDescription className="mt-2">

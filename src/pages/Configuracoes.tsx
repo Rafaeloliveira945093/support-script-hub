@@ -16,6 +16,7 @@ type Estruturante = {
 type StatusOpcao = {
   id: string;
   nome: string;
+  cor: string;
 };
 
 const Configuracoes = () => {
@@ -23,10 +24,12 @@ const Configuracoes = () => {
   const [statusOpcoes, setStatusOpcoes] = useState<StatusOpcao[]>([]);
   const [novoEstruturante, setNovoEstruturante] = useState("");
   const [novoStatus, setNovoStatus] = useState("");
+  const [novaCorStatus, setNovaCorStatus] = useState("#9ca3af");
   const [editandoEstruturante, setEditandoEstruturante] = useState<string | null>(null);
   const [editandoStatus, setEditandoStatus] = useState<string | null>(null);
   const [valorEditEstruturante, setValorEditEstruturante] = useState("");
   const [valorEditStatus, setValorEditStatus] = useState("");
+  const [corEditStatus, setCorEditStatus] = useState("#9ca3af");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -122,7 +125,7 @@ const Configuracoes = () => {
 
       const { error } = await supabase
         .from("status_opcoes")
-        .insert({ nome: novoStatus.trim(), user_id: user.id });
+        .insert({ nome: novoStatus.trim(), cor: novaCorStatus, user_id: user.id });
 
       if (error) throw error;
 
@@ -132,6 +135,7 @@ const Configuracoes = () => {
       });
 
       setNovoStatus("");
+      setNovaCorStatus("#9ca3af");
       fetchStatusOpcoes();
     } catch (error: any) {
       toast({
@@ -176,7 +180,7 @@ const Configuracoes = () => {
     try {
       const { error } = await supabase
         .from("status_opcoes")
-        .update({ nome: valorEditStatus.trim() })
+        .update({ nome: valorEditStatus.trim(), cor: corEditStatus })
         .eq("id", id);
 
       if (error) throw error;
@@ -188,6 +192,7 @@ const Configuracoes = () => {
 
       setEditandoStatus(null);
       setValorEditStatus("");
+      setCorEditStatus("#9ca3af");
       fetchStatusOpcoes();
     } catch (error: any) {
       toast({
@@ -362,14 +367,24 @@ const Configuracoes = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <Input
                 placeholder="Nome do status"
                 value={novoStatus}
                 onChange={(e) => setNovoStatus(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleAdicionarStatus()}
+                className="flex-1"
               />
-              <Button onClick={handleAdicionarStatus}>
+              <div className="flex items-center gap-2 shrink-0">
+                <label className="text-sm font-medium whitespace-nowrap">Cor:</label>
+                <input
+                  type="color"
+                  value={novaCorStatus}
+                  onChange={(e) => setNovaCorStatus(e.target.value)}
+                  className="h-10 w-14 cursor-pointer rounded border"
+                />
+              </div>
+              <Button onClick={handleAdicionarStatus} className="shrink-0">
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -386,7 +401,7 @@ const Configuracoes = () => {
                     className="flex items-center justify-between p-2 rounded-lg border"
                   >
                     {editandoStatus === status.id ? (
-                      <div className="flex gap-2 flex-1">
+                      <div className="flex gap-2 flex-1 items-center">
                         <Input
                           value={valorEditStatus}
                           onChange={(e) => setValorEditStatus(e.target.value)}
@@ -395,6 +410,15 @@ const Configuracoes = () => {
                           }
                           autoFocus
                         />
+                        <div className="flex items-center gap-2 shrink-0">
+                          <label className="text-sm font-medium whitespace-nowrap">Cor:</label>
+                          <input
+                            type="color"
+                            value={corEditStatus}
+                            onChange={(e) => setCorEditStatus(e.target.value)}
+                            className="h-10 w-14 cursor-pointer rounded border"
+                          />
+                        </div>
                         <Button
                           size="sm"
                           onClick={() => handleEditarStatus(status.id)}
@@ -407,6 +431,7 @@ const Configuracoes = () => {
                           onClick={() => {
                             setEditandoStatus(null);
                             setValorEditStatus("");
+                            setCorEditStatus("#9ca3af");
                           }}
                         >
                           Cancelar
@@ -414,7 +439,12 @@ const Configuracoes = () => {
                       </div>
                     ) : (
                       <>
-                        <Badge variant="secondary">{status.nome}</Badge>
+                        <Badge 
+                          variant="secondary" 
+                          style={{ backgroundColor: status.cor, color: '#fff' }}
+                        >
+                          {status.nome}
+                        </Badge>
                         <div className="flex gap-1">
                           <Button
                             variant="ghost"
@@ -422,6 +452,7 @@ const Configuracoes = () => {
                             onClick={() => {
                               setEditandoStatus(status.id);
                               setValorEditStatus(status.nome);
+                              setCorEditStatus(status.cor);
                             }}
                           >
                             <Edit className="h-4 w-4" />

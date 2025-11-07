@@ -244,6 +244,7 @@ export type Database = {
       }
       status_opcoes: {
         Row: {
+          cor: string
           created_at: string | null
           id: string
           nome: string
@@ -251,6 +252,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cor?: string
           created_at?: string | null
           id?: string
           nome: string
@@ -258,6 +260,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cor?: string
           created_at?: string | null
           id?: string
           nome?: string
