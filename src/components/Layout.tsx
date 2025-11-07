@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, BarChart3, FileCode, LogOut, Moon, Sun, ExternalLink, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Notificacoes } from "@/components/Notificacoes";
 import type { User, Session } from "@supabase/supabase-js";
 
 const Layout = () => {
@@ -107,6 +108,7 @@ const Layout = () => {
               <Button variant="outline" size="icon" onClick={toggleDarkMode} className="h-8 w-8 sm:h-10 sm:w-10">
                 {isDarkMode ? <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Moon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
               </Button>
+              <Notificacoes />
               <Button variant="outline" onClick={handleLogout} className="h-8 sm:h-10 text-xs sm:text-sm">
                 <LogOut className="mr-0 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Sair</span>
@@ -166,7 +168,7 @@ const Layout = () => {
       </div>
 
       <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
-        <Outlet />
+        <Outlet key={location.pathname} />
       </main>
     </div>
   );

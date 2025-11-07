@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { addBusinessHours } from "@/lib/dateUtils";
 
 type Link = {
   nome: string;
@@ -167,6 +168,24 @@ const DetalhesChamado = () => {
         status,
         nivel: parseInt(nivel),
       };
+
+      // Calcular prazo quando status muda para "aguardando_devolutiva"
+      if (status.toLowerCase() === "aguardando_devolutiva" && previousStatus.toLowerCase() !== "aguardando_devolutiva") {
+        const dataPrazo = addBusinessHours(new Date(), 72);
+        updateData.data_prazo = dataPrazo.toISOString();
+
+        // Criar notificação programada
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // A notificação será criada quando o prazo expirar (pode ser feito via scheduled job ou verificação no frontend)
+          console.log("Prazo calculado:", dataPrazo);
+        }
+      }
+
+      // Limpar prazo se status mudar de "aguardando_devolutiva" para outro
+      if (previousStatus.toLowerCase() === "aguardando_devolutiva" && status.toLowerCase() !== "aguardando_devolutiva") {
+        updateData.data_prazo = null;
+      }
 
       // Registrar data de encerramento quando status muda para "Fechado"
       if (status.toLowerCase() === "fechado" && previousStatus.toLowerCase() !== "fechado") {

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Clock, AlertCircle, Search, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { isPrazoExpirado } from "@/lib/dateUtils";
 
 type Chamado = {
   id: string;
@@ -17,6 +18,8 @@ type Chamado = {
   nivel: number;
   estruturante: string;
   data_criacao: string;
+  data_prazo: string | null;
+  user_id: string;
 };
 
 type StatusOpcao = {
@@ -41,6 +44,10 @@ const Chamados = () => {
     fetchChamados();
     fetchEstruturantes();
     fetchStatusOpcoes();
+    
+    // Verificar prazos expirados a cada minuto
+    const interval = setInterval(checkPrazosExpirados, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -126,6 +133,46 @@ const Chamados = () => {
     }
   };
 
+  const checkPrazosExpirados = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Buscar chamados com prazo expirado que ainda não foram notificados
+      const { data: chamadosExpirados, error } = await supabase
+        .from("chamados")
+        .select("id, numero_chamado, titulo, data_prazo, user_id")
+        .eq("user_id", user.id)
+        .eq("status", "aguardando_devolutiva")
+        .not("data_prazo", "is", null);
+
+      if (error) throw error;
+
+      // Criar notificações para chamados com prazo expirado
+      for (const chamado of chamadosExpirados || []) {
+        if (isPrazoExpirado(chamado.data_prazo)) {
+          // Verificar se já existe notificação
+          const { data: notifExistente } = await supabase
+            .from("notificacoes")
+            .select("id")
+            .eq("chamado_id", chamado.id)
+            .eq("user_id", user.id)
+            .single();
+
+          if (!notifExistente) {
+            await supabase.from("notificacoes").insert({
+              user_id: chamado.user_id,
+              chamado_id: chamado.id,
+              mensagem: `O prazo de 72h úteis do chamado "${chamado.titulo}" expirou. Por favor, atualize o status.`,
+            });
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error("Erro ao verificar prazos:", error);
+    }
+  };
+
   const limparFiltros = () => {
     setFiltroNivel("all");
     setFiltroEstruturante("all");
@@ -158,7 +205,11 @@ const Chamados = () => {
     });
   };
 
-  const getStatusColor = (statusNome: string) => {
+  const getStatusColor = (statusNome: string, dataPrazo: string | null) => {
+    // Se prazo expirado, retornar vermelho
+    if (dataPrazo && isPrazoExpirado(dataPrazo)) {
+      return "#ef4444"; // red-500
+    }
     const statusOpcao = statusOpcoes.find(s => s.nome === statusNome);
     return statusOpcao?.cor || "#9ca3af";
   };
@@ -285,7 +336,7 @@ const Chamados = () => {
               key={chamado.id}
               className="hover:shadow-md transition-shadow cursor-pointer border-l-4"
               onClick={() => navigate(`/chamados/${chamado.id}`)}
-              style={{ borderLeftColor: getStatusColor(chamado.status) }}
+              style={{ borderLeftColor: getStatusColor(chamado.status, chamado.data_prazo) }}
             >
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -299,9 +350,10 @@ const Chamados = () => {
                       </Badge>
                       <Badge 
                         variant="secondary"
-                        style={{ backgroundColor: getStatusColor(chamado.status), color: '#fff' }}
+                        style={{ backgroundColor: getStatusColor(chamado.status, chamado.data_prazo), color: '#fff' }}
                       >
                         {chamado.status}
+                        {chamado.data_prazo && isPrazoExpirado(chamado.data_prazo) && " - PRAZO EXPIRADO"}
                       </Badge>
                     </div>
                     <CardTitle className="text-xl">{chamado.titulo}</CardTitle>

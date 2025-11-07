@@ -20,6 +20,7 @@ export type Database = {
           data_criacao: string | null
           data_encaminhamento: string | null
           data_encerramento: string | null
+          data_prazo: string | null
           descricao_usuario: string
           estruturante: string
           id: string
@@ -37,6 +38,7 @@ export type Database = {
           data_criacao?: string | null
           data_encaminhamento?: string | null
           data_encerramento?: string | null
+          data_prazo?: string | null
           descricao_usuario: string
           estruturante: string
           id?: string
@@ -54,6 +56,7 @@ export type Database = {
           data_criacao?: string | null
           data_encaminhamento?: string | null
           data_encerramento?: string | null
+          data_prazo?: string | null
           descricao_usuario?: string
           estruturante?: string
           id?: string
@@ -134,6 +137,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notificacoes: {
+        Row: {
+          chamado_id: string
+          created_at: string
+          id: string
+          mensagem: string
+          user_id: string
+          visualizada: boolean
+        }
+        Insert: {
+          chamado_id: string
+          created_at?: string
+          id?: string
+          mensagem: string
+          user_id: string
+          visualizada?: boolean
+        }
+        Update: {
+          chamado_id?: string
+          created_at?: string
+          id?: string
+          mensagem?: string
+          user_id?: string
+          visualizada?: boolean
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
