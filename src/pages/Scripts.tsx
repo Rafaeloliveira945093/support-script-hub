@@ -247,19 +247,37 @@ const Scripts = () => {
     setEditingScript(null);
   };
 
-  const handleCopiarScript = (conteudo: string) => {
-    // Create a temporary div to parse HTML and preserve formatting
+  const handleCopiarScript = async (conteudo: string) => {
+    // Preserva a formatação original: copia HTML + texto simples (fallback)
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = conteudo;
-    
-    // Get text content preserving line breaks
     const textContent = tempDiv.innerText || tempDiv.textContent || '';
-    
-    navigator.clipboard.writeText(textContent);
-    toast({
-      title: "Script copiado!",
-      description: "O conteúdo foi copiado para a área de transferência",
-    });
+
+    try {
+      const ClipboardItemCtor = (window as any).ClipboardItem;
+      if (ClipboardItemCtor && navigator.clipboard && 'write' in navigator.clipboard) {
+        const blobHtml = new Blob([conteudo], { type: 'text/html' });
+        const blobText = new Blob([textContent], { type: 'text/plain' });
+        await navigator.clipboard.write([
+          new ClipboardItemCtor({
+            'text/html': blobHtml,
+            'text/plain': blobText,
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(textContent);
+      }
+      toast({
+        title: "Script copiado!",
+        description: "Formatação preservada em apps compatíveis; fallback em texto simples.",
+      });
+    } catch (err) {
+      await navigator.clipboard.writeText(textContent);
+      toast({
+        title: "Script copiado!",
+        description: "Não foi possível copiar como HTML; copiado como texto simples.",
+      });
+    }
   };
 
   const handleVisualizarScript = (script: Script) => {
