@@ -248,7 +248,14 @@ const Scripts = () => {
   };
 
   const handleCopiarScript = (conteudo: string) => {
-    navigator.clipboard.writeText(conteudo);
+    // Create a temporary div to parse HTML and preserve formatting
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = conteudo;
+    
+    // Get text content preserving line breaks
+    const textContent = tempDiv.innerText || tempDiv.textContent || '';
+    
+    navigator.clipboard.writeText(textContent);
     toast({
       title: "Script copiado!",
       description: "O conteúdo foi copiado para a área de transferência",

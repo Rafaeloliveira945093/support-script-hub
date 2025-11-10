@@ -11,12 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ArrowLeft, Loader2, Send, User, ExternalLink, Edit, Trash2, CalendarIcon, StickyNote } from "lucide-react";
+import { ArrowLeft, Loader2, Send, User, ExternalLink, Edit, Trash2, CalendarIcon, StickyNote, Clock, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "@/components/RichTextEditor";
-import { addBusinessHours } from "@/lib/dateUtils";
+import { addBusinessHours, isPrazoExpirado } from "@/lib/dateUtils";
 
 type Link = {
   nome: string;
@@ -38,6 +38,7 @@ type Chamado = {
   updated_at: string;
   links: Link[];
   anotacoes_internas?: string;
+  data_prazo?: string | null;
 };
 
 type Resposta = {
@@ -640,6 +641,38 @@ const DetalhesChamado = () => {
                     </span>
                   </a>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Prazo do chamado */}
+          {chamado.data_prazo && (
+            <div className={cn(
+              "p-4 rounded-lg border",
+              isPrazoExpirado(chamado.data_prazo)
+                ? "bg-destructive/10 border-destructive"
+                : "bg-muted border-border"
+            )}>
+              <div className="flex items-center gap-2">
+                {isPrazoExpirado(chamado.data_prazo) ? (
+                  <AlertCircle className="h-5 w-5 text-destructive" />
+                ) : (
+                  <Clock className="h-5 w-5 text-muted-foreground" />
+                )}
+                <div>
+                  <p className={cn(
+                    "font-semibold",
+                    isPrazoExpirado(chamado.data_prazo)
+                      ? "text-destructive"
+                      : "text-foreground"
+                  )}>
+                    {isPrazoExpirado(chamado.data_prazo) ? "Prazo Expirado!" : "Prazo de Devolutiva"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {isPrazoExpirado(chamado.data_prazo) ? "Expirou em: " : "Expira em: "}
+                    {format(new Date(chamado.data_prazo), "dd/MM/yyyy 'às' HH:mm")}
+                  </p>
+                </div>
               </div>
             </div>
           )}

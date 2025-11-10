@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Clock, AlertCircle, Search, X } from "lucide-react";
+import { Plus, Clock, AlertCircle, Search, X, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isPrazoExpirado } from "@/lib/dateUtils";
 
@@ -20,6 +20,7 @@ type Chamado = {
   data_criacao: string;
   data_prazo: string | null;
   user_id: string;
+  anotacoes_internas?: string;
 };
 
 type StatusOpcao = {
@@ -84,7 +85,7 @@ const Chamados = () => {
     try {
       const { data, error } = await supabase
         .from("chamados")
-        .select("*")
+        .select("id, numero_chamado, titulo, status, data_criacao, nivel, estruturante, data_prazo, user_id, anotacoes_internas")
         .order("data_criacao", { ascending: false });
 
       if (error) throw error;
@@ -355,6 +356,9 @@ const Chamados = () => {
                         {chamado.status}
                         {chamado.data_prazo && isPrazoExpirado(chamado.data_prazo) && " - PRAZO EXPIRADO"}
                       </Badge>
+                      {chamado.anotacoes_internas && chamado.anotacoes_internas.trim() !== "" && (
+                        <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                      )}
                     </div>
                     <CardTitle className="text-xl">{chamado.titulo}</CardTitle>
                     <CardDescription className="mt-2">

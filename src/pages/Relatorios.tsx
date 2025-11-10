@@ -2,9 +2,14 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileDown, BarChart3, FileText, AlertTriangle } from "lucide-react";
+import { FileDown, BarChart3, FileText, AlertTriangle, Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 type Stats = {
   total: number;
@@ -22,12 +27,14 @@ const Relatorios = () => {
   });
   const [totalScripts, setTotalScripts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchStats();
     fetchScriptsCount();
-  }, []);
+  }, [startDate, endDate]);
 
   const fetchScriptsCount = async () => {
     try {
@@ -44,9 +51,25 @@ const Relatorios = () => {
 
   const fetchStats = async () => {
     try {
-      const { data: chamados, error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      let query = supabase
         .from("chamados")
-        .select("*");
+        .select("*")
+        .eq("user_id", user.id);
+
+      // Apply date filters if set
+      if (startDate) {
+        query = query.gte("data_criacao", startDate.toISOString());
+      }
+      if (endDate) {
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        query = query.lte("data_criacao", endOfDay.toISOString());
+      }
+
+      const { data: chamados, error } = await query;
 
       if (error) throw error;
 
@@ -141,17 +164,97 @@ const Relatorios = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
         <div>
           <h2 className="text-3xl font-bold">Relatórios</h2>
           <p className="text-muted-foreground">
             Visualize estatísticas e exporte dados dos chamados
           </p>
         </div>
-        <Button onClick={handleExportar}>
-          <FileDown className="mr-2 h-4 w-4" />
-          Exportar para Excel
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                const today = new Date();
+                setStartDate(today);
+                setEndDate(today);
+              }}
+            >
+              Hoje
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const today = new Date();
+                const weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - today.getDay());
+                setStartDate(weekStart);
+                setEndDate(today);
+              }}
+            >
+              Esta Semana
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const today = new Date();
+                const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+                setStartDate(monthStart);
+                setEndDate(today);
+              }}
+            >
+              Este Mês
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setStartDate(undefined);
+                setEndDate(undefined);
+              }}
+            >
+              Limpar
+            </Button>
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <CalendarIcon className="h-4 w-4" />
+                {startDate && endDate
+                  ? `${format(startDate, "dd/MM/yyyy")} - ${format(endDate, "dd/MM/yyyy")}`
+                  : startDate
+                  ? `A partir de ${format(startDate, "dd/MM/yyyy")}`
+                  : endDate
+                  ? `Até ${format(endDate, "dd/MM/yyyy")}`
+                  : "Selecionar período"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <div className="p-3 space-y-2">
+                <div className="font-semibold text-sm">Data inicial</div>
+                <Calendar
+                  mode="single"
+                  selected={startDate}
+                  onSelect={setStartDate}
+                  locale={ptBR}
+                  className="pointer-events-auto"
+                />
+                <div className="font-semibold text-sm mt-4">Data final</div>
+                <Calendar
+                  mode="single"
+                  selected={endDate}
+                  onSelect={setEndDate}
+                  locale={ptBR}
+                  className="pointer-events-auto"
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button onClick={handleExportar} className="gap-2">
+            <FileDown className="h-4 w-4" />
+            Exportar para Excel
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
