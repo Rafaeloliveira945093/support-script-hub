@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      chamado_links: {
+        Row: {
+          chamado_id: string
+          created_at: string
+          created_by: string
+          id: string
+          nome: string
+          url: string
+        }
+        Insert: {
+          chamado_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          nome: string
+          url: string
+        }
+        Update: {
+          chamado_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          nome?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      chamado_logs: {
+        Row: {
+          acao: string
+          campo_alterado: string | null
+          chamado_id: string
+          created_at: string
+          id: string
+          user_id: string
+          valor_antigo: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          acao: string
+          campo_alterado?: string | null
+          chamado_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+          valor_antigo?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          acao?: string
+          campo_alterado?: string | null
+          chamado_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+          valor_antigo?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: []
+      }
       chamados: {
         Row: {
           anotacoes_internas: string | null
@@ -24,6 +84,8 @@ export type Database = {
           descricao_usuario: string
           estruturante: string
           id: string
+          last_edited_at: string | null
+          last_edited_by: string | null
           links: Json | null
           nivel: number
           nivel_encaminhado: number | null
@@ -42,6 +104,8 @@ export type Database = {
           descricao_usuario: string
           estruturante: string
           id?: string
+          last_edited_at?: string | null
+          last_edited_by?: string | null
           links?: Json | null
           nivel: number
           nivel_encaminhado?: number | null
@@ -60,6 +124,8 @@ export type Database = {
           descricao_usuario?: string
           estruturante?: string
           id?: string
+          last_edited_at?: string | null
+          last_edited_by?: string | null
           links?: Json | null
           nivel?: number
           nivel_encaminhado?: number | null

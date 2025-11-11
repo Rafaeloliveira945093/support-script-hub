@@ -13,6 +13,9 @@ import { cn } from "@/lib/utils";
 
 type Stats = {
   total: number;
+  emAndamento: number;
+  fechadosNoPeriodo: number;
+  encaminhadosN3NoPeriodo: number;
   porStatus: Record<string, number>;
   porEstruturante: Record<string, number>;
   porNivel: Record<number, number>;
@@ -21,6 +24,9 @@ type Stats = {
 const Relatorios = () => {
   const [stats, setStats] = useState<Stats>({
     total: 0,
+    emAndamento: 0,
+    fechadosNoPeriodo: 0,
+    encaminhadosN3NoPeriodo: 0,
     porStatus: {},
     porEstruturante: {},
     porNivel: {},
@@ -54,12 +60,25 @@ const Relatorios = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Query base para todos os chamados do usuário
+      const { data: todosChamados, error: todosError } = await supabase
+        .from("chamados")
+        .select("*")
+        .eq("user_id", user.id);
+
+      if (todosError) throw todosError;
+
+      // Contar "em andamento" independente de data (status atual)
+      const emAndamento = todosChamados?.filter(
+        c => c.status.toLowerCase() !== "fechado" && c.status.toLowerCase() !== "encerrado"
+      ).length || 0;
+
+      // Query para chamados criados no período (para estatísticas gerais)
       let query = supabase
         .from("chamados")
         .select("*")
         .eq("user_id", user.id);
 
-      // Apply date filters if set
       if (startDate) {
         query = query.gte("data_criacao", startDate.toISOString());
       }
@@ -70,9 +89,48 @@ const Relatorios = () => {
       }
 
       const { data: chamados, error } = await query;
-
       if (error) throw error;
 
+      // Contar fechados no período (por data_encerramento)
+      let fechadosQuery = supabase
+        .from("chamados")
+        .select("*")
+        .eq("user_id", user.id)
+        .not("data_encerramento", "is", null);
+
+      if (startDate) {
+        fechadosQuery = fechadosQuery.gte("data_encerramento", startDate.toISOString());
+      }
+      if (endDate) {
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        fechadosQuery = fechadosQuery.lte("data_encerramento", endOfDay.toISOString());
+      }
+
+      const { data: fechados, error: fechadosError } = await fechadosQuery;
+      if (fechadosError) throw fechadosError;
+
+      // Contar encaminhados para N3 no período (por data_encaminhamento e nivel_encaminhado = 3)
+      let encaminhadosQuery = supabase
+        .from("chamados")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("nivel_encaminhado", 3)
+        .not("data_encaminhamento", "is", null);
+
+      if (startDate) {
+        encaminhadosQuery = encaminhadosQuery.gte("data_encaminhamento", startDate.toISOString());
+      }
+      if (endDate) {
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        encaminhadosQuery = encaminhadosQuery.lte("data_encaminhamento", endOfDay.toISOString());
+      }
+
+      const { data: encaminhados, error: encaminhadosError } = await encaminhadosQuery;
+      if (encaminhadosError) throw encaminhadosError;
+
+      // Estatísticas gerais baseadas em chamados criados no período
       const porStatus: Record<string, number> = {};
       const porEstruturante: Record<string, number> = {};
       const porNivel: Record<number, number> = { 1: 0, 2: 0, 3: 0 };
@@ -85,6 +143,9 @@ const Relatorios = () => {
 
       setStats({
         total: chamados?.length || 0,
+        emAndamento,
+        fechadosNoPeriodo: fechados?.length || 0,
+        encaminhadosN3NoPeriodo: encaminhados?.length || 0,
         porStatus,
         porEstruturante,
         porNivel,
@@ -257,17 +318,53 @@ const Relatorios = () => {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total de Chamados</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Criados</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
+            <p className="text-xs text-muted-foreground">No período selecionado</p>
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
+            <BarChart3 className="h-4 w-4 text-info" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.emAndamento}</div>
+            <p className="text-xs text-muted-foreground">Status atual</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Fechados</CardTitle>
+            <BarChart3 className="h-4 w-4 text-success" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.fechadosNoPeriodo}</div>
+            <p className="text-xs text-muted-foreground">No período selecionado</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Encaminhados N3</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-warning" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.encaminhadosN3NoPeriodo}</div>
+            <p className="text-xs text-muted-foreground">No período selecionado</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total de Scripts</CardTitle>

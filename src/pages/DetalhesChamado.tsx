@@ -11,17 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ArrowLeft, Loader2, Send, User, ExternalLink, Edit, Trash2, CalendarIcon, StickyNote, Clock, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, Send, User, Edit, Trash2, CalendarIcon, StickyNote, Clock, AlertCircle, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { addBusinessHours, isPrazoExpirado } from "@/lib/dateUtils";
-
-type Link = {
-  nome: string;
-  url: string;
-};
+import { updateChamadoWithLog, logChamadoChange } from "@/lib/auditLog";
+import { LinksManager } from "@/components/LinksManager";
 
 type Chamado = {
   id: string;
@@ -36,9 +33,10 @@ type Chamado = {
   data_encerramento: string | null;
   nivel_encaminhado: number | null;
   updated_at: string;
-  links: Link[];
   anotacoes_internas?: string;
   data_prazo?: string | null;
+  last_edited_at?: string | null;
+  last_edited_by?: string | null;
 };
 
 type Resposta = {
@@ -73,14 +71,29 @@ const DetalhesChamado = () => {
   const [dataEncerramento, setDataEncerramento] = useState<Date | undefined>(undefined);
   const [anotacoesInternas, setAnotacoesInternas] = useState("");
   const [isSavingAnotacoes, setIsSavingAnotacoes] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [editEstruturante, setEditEstruturante] = useState("");
+  const [estruturantes, setEstruturantes] = useState<string[]>([]);
 
   useEffect(() => {
     if (id) {
       fetchChamado();
       fetchRespostas();
       fetchStatusOpcoes();
+      fetchEstruturantes();
     }
   }, [id]);
+
+  useEffect(() => {
+    // Detectar mudanças não salvas
+    if (chamado) {
+      const changed = 
+        status !== chamado.status ||
+        nivel !== chamado.nivel.toString() ||
+        editEstruturante !== chamado.estruturante;
+      setHasUnsavedChanges(changed);
+    }
+  }, [status, nivel, editEstruturante, chamado]);
 
   const fetchStatusOpcoes = async () => {
     try {
@@ -96,15 +109,21 @@ const DetalhesChamado = () => {
     }
   };
 
-  useEffect(() => {
-    const saveTimeout = setTimeout(() => {
-      if (chamado && (status !== chamado.status || nivel !== chamado.nivel.toString())) {
-        handleAutoSave();
-      }
-    }, 1000);
+  const fetchEstruturantes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("estruturantes")
+        .select("nome")
+        .order("nome");
 
-    return () => clearTimeout(saveTimeout);
-  }, [status, nivel]);
+      if (error) throw error;
+      setEstruturantes(data?.map(e => e.nome) || []);
+    } catch (error: any) {
+      console.error("Erro ao carregar estruturantes:", error);
+    }
+  };
+
+  // Removed auto-save - now using manual save button
 
   const fetchChamado = async () => {
     try {
@@ -116,12 +135,10 @@ const DetalhesChamado = () => {
 
       if (error) throw error;
 
-      setChamado({
-        ...data,
-        links: (data.links as any) || []
-      });
+      setChamado(data);
       setStatus(data.status);
       setNivel(data.nivel.toString());
+      setEditEstruturante(data.estruturante);
       setPreviousStatus(data.status);
       setPreviousNivel(data.nivel.toString());
       setEditTitulo(data.titulo);
@@ -161,26 +178,30 @@ const DetalhesChamado = () => {
     }
   };
 
-  const handleAutoSave = async () => {
-    if (!chamado) return;
+  const handleSaveQuickChanges = async () => {
+    if (!chamado || !hasUnsavedChanges) return;
 
+    setIsSaving(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
       const updateData: any = {
         status,
         nivel: parseInt(nivel),
+        estruturante: editEstruturante,
+      };
+
+      const previousValues = {
+        status: chamado.status,
+        nivel: chamado.nivel,
+        estruturante: chamado.estruturante,
       };
 
       // Calcular prazo quando status muda para "aguardando_devolutiva"
       if (status.toLowerCase() === "aguardando_devolutiva" && previousStatus.toLowerCase() !== "aguardando_devolutiva") {
         const dataPrazo = addBusinessHours(new Date(), 72);
         updateData.data_prazo = dataPrazo.toISOString();
-
-        // Criar notificação programada
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          // A notificação será criada quando o prazo expirar (pode ser feito via scheduled job ou verificação no frontend)
-          console.log("Prazo calculado:", dataPrazo);
-        }
       }
 
       // Limpar prazo se status mudar de "aguardando_devolutiva" para outro
@@ -199,17 +220,33 @@ const DetalhesChamado = () => {
         updateData.nivel_encaminhado = parseInt(nivel);
       }
 
-      const { error } = await supabase
-        .from("chamados")
-        .update(updateData)
-        .eq("id", chamado.id);
+      // Atualizar com logging
+      const result = await updateChamadoWithLog(
+        chamado.id,
+        user.id,
+        updateData,
+        previousValues
+      );
 
-      if (error) throw error;
+      if (!result.success) throw result.error;
+
+      toast({
+        title: "Alterações salvas!",
+        description: "O chamado foi atualizado com sucesso",
+      });
 
       setPreviousStatus(status);
       setPreviousNivel(nivel);
+      setHasUnsavedChanges(false);
+      fetchChamado(); // Refresh data
     } catch (error: any) {
-      console.error("Erro ao salvar automaticamente:", error);
+      toast({
+        title: "Erro ao salvar",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -240,6 +277,17 @@ const DetalhesChamado = () => {
         });
 
       if (error) throw error;
+
+      // Registrar log
+      if (chamado) {
+        await logChamadoChange({
+          chamado_id: chamado.id,
+          user_id: user.id,
+          acao: "response_added",
+          campo_alterado: "respostas",
+          valor_novo: `Tipo: ${tipoResposta}`
+        });
+      }
 
       toast({
         title: "Resposta enviada!",
@@ -341,12 +389,27 @@ const DetalhesChamado = () => {
 
     setIsSavingAnotacoes(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
       const { error } = await supabase
         .from("chamados")
-        .update({ anotacoes_internas: anotacoesInternas })
+        .update({ 
+          anotacoes_internas: anotacoesInternas,
+          last_edited_at: new Date().toISOString(),
+          last_edited_by: user.id
+        })
         .eq("id", chamado.id);
 
       if (error) throw error;
+
+      // Registrar log
+      await logChamadoChange({
+        chamado_id: chamado.id,
+        user_id: user.id,
+        acao: "notes_updated",
+        campo_alterado: "anotacoes_internas"
+      });
 
       toast({
         title: "Anotações salvas!",
@@ -450,6 +513,25 @@ const DetalhesChamado = () => {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Botão Salvar fixo no topo quando há mudanças */}
+          {hasUnsavedChanges && (
+            <div className="sticky top-0 z-10 bg-card border rounded-lg p-4 shadow-md">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  Você tem alterações não salvas
+                </p>
+                <Button onClick={handleSaveQuickChanges} disabled={isSaving}>
+                  {isSaving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Salvar Alterações
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Status</Label>
@@ -483,7 +565,18 @@ const DetalhesChamado = () => {
 
           <div className="space-y-2">
             <Label>Estruturante</Label>
-            <Input value={chamado.estruturante} disabled />
+            <Select value={editEstruturante} onValueChange={setEditEstruturante}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {estruturantes.map((est) => (
+                  <SelectItem key={est} value={est}>
+                    {est}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <Separator />
@@ -610,40 +703,19 @@ const DetalhesChamado = () => {
               <Textarea
                 value={editDescricao}
                 onChange={(e) => setEditDescricao(e.target.value)}
-                rows={4}
+                className="min-h-[100px] max-h-[60vh] resize-y"
               />
             ) : (
-              <Textarea
-                value={chamado.descricao_usuario}
-                disabled
-                rows={4}
-                className="resize-none"
-              />
+              <div className="p-3 rounded-lg border bg-muted/30 max-h-[60vh] overflow-y-auto">
+                <p className="whitespace-pre-wrap text-sm">{chamado.descricao_usuario}</p>
+              </div>
             )}
           </div>
 
-          {chamado.links && chamado.links.length > 0 && (
-            <div className="space-y-2">
-              <Label>Links Relacionados</Label>
-              <div className="space-y-2">
-                {chamado.links.map((link, index) => (
-                  <a
-                    key={index}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2 rounded-lg border hover:bg-accent transition-colors"
-                  >
-                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{link.nome}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {new URL(link.url).hostname}
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
+          <Separator />
+
+          {/* Sistema de Links Dinâmico */}
+          <LinksManager chamadoId={chamado.id} />
 
           {/* Prazo do chamado */}
           {chamado.data_prazo && (

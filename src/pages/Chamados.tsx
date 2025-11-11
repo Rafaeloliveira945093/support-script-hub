@@ -85,7 +85,8 @@ const Chamados = () => {
     try {
       const { data, error } = await supabase
         .from("chamados")
-        .select("id, numero_chamado, titulo, status, data_criacao, nivel, estruturante, data_prazo, user_id, anotacoes_internas")
+        .select("id, numero_chamado, titulo, status, data_criacao, nivel, estruturante, data_prazo, user_id, anotacoes_internas, last_edited_at")
+        .order("last_edited_at", { ascending: false, nullsFirst: false })
         .order("data_criacao", { ascending: false });
 
       if (error) throw error;

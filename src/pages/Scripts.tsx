@@ -33,6 +33,7 @@ const Scripts = () => {
   const [filtroEstruturante, setFiltroEstruturante] = useState<string>("all");
   const [filtroNivel, setFiltroNivel] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [estruturantes, setEstruturantes] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
     titulo_script: "",
@@ -46,6 +47,7 @@ const Scripts = () => {
 
   useEffect(() => {
     fetchScripts();
+    fetchEstruturantes();
   }, []);
 
   useEffect(() => {
@@ -68,6 +70,21 @@ const Scripts = () => {
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  const fetchEstruturantes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("estruturantes")
+        .select("nome")
+        .order("nome");
+
+      if (error) throw error;
+
+      setEstruturantes(data?.map(e => e.nome) || []);
+    } catch (error: any) {
+      console.error("Erro ao carregar estruturantes:", error);
     }
   };
 
@@ -285,8 +302,6 @@ const Scripts = () => {
     setIsViewDialogOpen(true);
   };
 
-  const estruturantes = Array.from(new Set(scripts.map(s => s.estruturante)));
-
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
@@ -343,11 +358,21 @@ const Scripts = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Estruturante *</Label>
-                    <Input
+                    <Select
                       value={formData.estruturante}
-                      onChange={(e) => setFormData({...formData, estruturante: e.target.value})}
-                      placeholder="Ex: TI, Financeiro"
-                    />
+                      onValueChange={(value) => setFormData({...formData, estruturante: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {estruturantes.map((est) => (
+                          <SelectItem key={est} value={est}>
+                            {est}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Nível *</Label>
