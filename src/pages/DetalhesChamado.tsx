@@ -457,16 +457,6 @@ const DetalhesChamado = () => {
 
       if (!result.success) throw result.error;
 
-      // Log específico de conclusão
-      await logChamadoChange({
-        chamado_id: chamado.id,
-        user_id: user.id,
-        acao: "status_change",
-        campo_alterado: "status",
-        valor_antigo: chamado.status,
-        valor_novo: "Fechado"
-      });
-
       toast({
         title: "Chamado concluído!",
         description: "O chamado foi marcado como concluído",

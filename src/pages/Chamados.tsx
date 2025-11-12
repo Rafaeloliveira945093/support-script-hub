@@ -6,9 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Clock, AlertCircle, Search, X, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isPrazoExpirado } from "@/lib/dateUtils";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type Chamado = {
   id: string;
@@ -38,6 +42,8 @@ const Chamados = () => {
   const [filtroNivel, setFiltroNivel] = useState<string>("all");
   const [filtroEstruturante, setFiltroEstruturante] = useState<string>("all");
   const [filtroStatus, setFiltroStatus] = useState<string>("all");
+  const [selectedChamadoId, setSelectedChamadoId] = useState<string | null>(null);
+  const [anotacoesDialog, setAnotacoesDialog] = useState<string>("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -216,6 +222,15 @@ const Chamados = () => {
     return statusOpcao?.cor || "#9ca3af";
   };
 
+  const handleOpenAnotacoes = async (e: React.MouseEvent, chamadoId: string) => {
+    e.stopPropagation();
+    const chamado = chamados.find(c => c.id === chamadoId);
+    if (chamado?.anotacoes_internas) {
+      setAnotacoesDialog(chamado.anotacoes_internas);
+      setSelectedChamadoId(chamadoId);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -358,7 +373,10 @@ const Chamados = () => {
                         {chamado.data_prazo && isPrazoExpirado(chamado.data_prazo) && " - PRAZO EXPIRADO"}
                       </Badge>
                       {chamado.anotacoes_internas && chamado.anotacoes_internas.trim() !== "" && (
-                        <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                        <MessageSquare 
+                          className="h-5 w-5 text-muted-foreground cursor-pointer hover:text-primary transition-colors" 
+                          onClick={(e) => handleOpenAnotacoes(e, chamado.id)}
+                        />
                       )}
                     </div>
                     <CardTitle className="text-xl">{chamado.titulo}</CardTitle>
@@ -378,6 +396,34 @@ const Chamados = () => {
           ))}
         </div>
       )}
+
+      <Dialog open={!!selectedChamadoId} onOpenChange={(open) => !open && setSelectedChamadoId(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Anotações do Chamado
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <div 
+              className="prose prose-sm max-w-none dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: anotacoesDialog }}
+            />
+          </ScrollArea>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setSelectedChamadoId(null)}>
+              Fechar
+            </Button>
+            <Button onClick={() => {
+              setSelectedChamadoId(null);
+              navigate(`/chamados/${selectedChamadoId}`);
+            }}>
+              Ver Completo
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
