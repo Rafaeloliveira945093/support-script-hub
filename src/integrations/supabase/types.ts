@@ -233,24 +233,36 @@ export type Database = {
       }
       profiles: {
         Row: {
+          cargo: string | null
           created_at: string | null
           email: string | null
+          horario_fim: string | null
+          horario_inicio: string | null
           id: string
           nome_completo: string | null
+          telefone: string | null
           updated_at: string | null
         }
         Insert: {
+          cargo?: string | null
           created_at?: string | null
           email?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
           id: string
           nome_completo?: string | null
+          telefone?: string | null
           updated_at?: string | null
         }
         Update: {
+          cargo?: string | null
           created_at?: string | null
           email?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
           id?: string
           nome_completo?: string | null
+          telefone?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -385,6 +397,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      usuario_pausas: {
+        Row: {
+          created_at: string | null
+          hora_fim: string
+          hora_inicio: string
+          id: string
+          nome: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          hora_fim: string
+          hora_inicio: string
+          id?: string
+          nome: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string | null
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          nome?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuario_pausas_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

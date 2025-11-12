@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Loader2, Plus, Trash2, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { logChamadoCreation } from "@/lib/auditLog";
 
 type Link = {
   nome: string;
@@ -150,6 +151,9 @@ const NovoChamado = () => {
         .single();
 
       if (error) throw error;
+
+      // Registrar log de criação
+      await logChamadoCreation(data.id, user.id);
 
       toast({
         title: "Sucesso!",

@@ -38,6 +38,17 @@ export const logChamadoChange = async (entry: LogEntry) => {
   }
 };
 
+export const logChamadoCreation = async (chamadoId: string, userId: string) => {
+  await logChamadoChange({
+    chamado_id: chamadoId,
+    user_id: userId,
+    acao: "created",
+    campo_alterado: null,
+    valor_antigo: null,
+    valor_novo: null
+  });
+};
+
 export const updateChamadoWithLog = async (
   chamadoId: string,
   userId: string,

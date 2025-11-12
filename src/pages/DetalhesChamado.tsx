@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ArrowLeft, Loader2, Send, User, Edit, Trash2, CalendarIcon, StickyNote, Clock, AlertCircle, Save } from "lucide-react";
+import { ArrowLeft, Loader2, Send, User, Edit, Trash2, CalendarIcon, StickyNote, Clock, AlertCircle, Save, CheckCircle, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,9 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import { addBusinessHours, isPrazoExpirado } from "@/lib/dateUtils";
 import { updateChamadoWithLog, logChamadoChange } from "@/lib/auditLog";
 import { LinksManager } from "@/components/LinksManager";
+import { HistoricoEdicao } from "@/components/HistoricoEdicao";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 type Chamado = {
   id: string;
@@ -74,6 +77,8 @@ const DetalhesChamado = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [editEstruturante, setEditEstruturante] = useState("");
   const [estruturantes, setEstruturantes] = useState<string[]>([]);
+  const [editingRespostaId, setEditingRespostaId] = useState<string | null>(null);
+  const [editingRespostaContent, setEditingRespostaContent] = useState("");
 
   useEffect(() => {
     if (id) {
@@ -426,6 +431,146 @@ const DetalhesChamado = () => {
     }
   };
 
+  const handleConcluirChamado = async () => {
+    if (!chamado) return;
+
+    setIsSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const updateData = {
+        status: "Fechado",
+        data_encerramento: new Date().toISOString(),
+      };
+
+      const previousValues = {
+        status: chamado.status,
+      };
+
+      const result = await updateChamadoWithLog(
+        chamado.id,
+        user.id,
+        updateData,
+        previousValues
+      );
+
+      if (!result.success) throw result.error;
+
+      // Log específico de conclusão
+      await logChamadoChange({
+        chamado_id: chamado.id,
+        user_id: user.id,
+        acao: "status_change",
+        campo_alterado: "status",
+        valor_antigo: chamado.status,
+        valor_novo: "Fechado"
+      });
+
+      toast({
+        title: "Chamado concluído!",
+        description: "O chamado foi marcado como concluído",
+      });
+
+      fetchChamado();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao concluir chamado",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditarResposta = async (respostaId: string) => {
+    if (!editingRespostaContent.trim()) {
+      toast({
+        title: "Erro",
+        description: "O conteúdo da resposta não pode estar vazio",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { error } = await supabase
+        .from("respostas")
+        .update({ conteudo: editingRespostaContent })
+        .eq("id", respostaId);
+
+      if (error) throw error;
+
+      // Registrar log
+      if (chamado) {
+        await logChamadoChange({
+          chamado_id: chamado.id,
+          user_id: user.id,
+          acao: "update",
+          campo_alterado: "resposta",
+          valor_novo: "Resposta editada"
+        });
+      }
+
+      toast({
+        title: "Resposta atualizada!",
+        description: "A resposta foi editada com sucesso",
+      });
+
+      setEditingRespostaId(null);
+      setEditingRespostaContent("");
+      fetchRespostas();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao editar resposta",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExcluirResposta = async (respostaId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { error } = await supabase
+        .from("respostas")
+        .delete()
+        .eq("id", respostaId);
+
+      if (error) throw error;
+
+      // Registrar log
+      if (chamado) {
+        await logChamadoChange({
+          chamado_id: chamado.id,
+          user_id: user.id,
+          acao: "update",
+          campo_alterado: "resposta",
+          valor_novo: "Resposta excluída"
+        });
+      }
+
+      toast({
+        title: "Resposta excluída!",
+        description: "A resposta foi removida com sucesso",
+      });
+
+      fetchRespostas();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir resposta",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("pt-BR", {
       day: "2-digit",
@@ -474,6 +619,19 @@ const DetalhesChamado = () => {
               </CardDescription>
             </div>
             <div className="flex gap-2">
+              {/* Botão Concluído */}
+              {chamado.status.toLowerCase() !== "fechado" && chamado.status.toLowerCase() !== "encerrado" && !isEditingChamado && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleConcluirChamado}
+                  disabled={isSaving}
+                  className="gap-2"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Concluído
+                </Button>
+              )}
               {isEditingChamado ? (
                 <>
                   <Button size="sm" onClick={handleSalvarEdicaoChamado}>
@@ -513,24 +671,32 @@ const DetalhesChamado = () => {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Botão Salvar fixo no topo quando há mudanças */}
-          {hasUnsavedChanges && (
-            <div className="sticky top-0 z-10 bg-card border rounded-lg p-4 shadow-md">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  Você tem alterações não salvas
-                </p>
-                <Button onClick={handleSaveQuickChanges} disabled={isSaving}>
-                  {isSaving ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
-                  Salvar Alterações
-                </Button>
-              </div>
-            </div>
-          )}
+          {/* Tabs para navegação */}
+          <Tabs defaultValue="detalhes" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
+              <TabsTrigger value="historico">Histórico de Edição</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="detalhes" className="space-y-6 mt-6">
+              {/* Botão Salvar fixo no topo quando há mudanças */}
+              {hasUnsavedChanges && (
+                <div className="sticky top-0 z-10 bg-card border rounded-lg p-4 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      Você tem alterações não salvas
+                    </p>
+                    <Button onClick={handleSaveQuickChanges} disabled={isSaving}>
+                      {isSaving ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                      )}
+                      Salvar Alterações
+                    </Button>
+                  </div>
+                </div>
+              )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -763,18 +929,85 @@ const DetalhesChamado = () => {
                 {respostas.map((resposta) => (
                   <Card key={resposta.id}>
                     <CardHeader className="pb-3">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">
-                          {resposta.tipo === "usuario" ? "Usuário" : "Central"}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          · {formatDate(resposta.data_criacao)}
-                        </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">
+                            {resposta.tipo === "usuario" ? "Usuário" : "Central"}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            · {formatDate(resposta.data_criacao)}
+                          </span>
+                        </div>
+                        <div className="flex gap-1">
+                          {editingRespostaId === resposta.id ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEditarResposta(resposta.id)}
+                              >
+                                <CheckCircle className="h-4 w-4 text-success" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setEditingRespostaId(null);
+                                  setEditingRespostaContent("");
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setEditingRespostaId(resposta.id);
+                                  setEditingRespostaContent(resposta.conteudo);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tem certeza que deseja excluir esta resposta? Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleExcluirResposta(resposta.id)}>
+                                      Excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
+                        </div>
                       </div>
                      </CardHeader>
                      <CardContent>
-                       <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: resposta.conteudo }} />
+                       {editingRespostaId === resposta.id ? (
+                         <RichTextEditor
+                           content={editingRespostaContent}
+                           onChange={setEditingRespostaContent}
+                           placeholder="Edite a resposta..."
+                         />
+                       ) : (
+                         <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: resposta.conteudo }} />
+                       )}
                      </CardContent>
                    </Card>
                 ))}
@@ -838,6 +1071,12 @@ const DetalhesChamado = () => {
               placeholder="Adicione anotações internas que não aparecem nas respostas do chamado..."
             />
           </div>
+            </TabsContent>
+            
+            <TabsContent value="historico" className="mt-6">
+              <HistoricoEdicao chamadoId={chamado.id} />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
