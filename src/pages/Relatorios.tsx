@@ -69,8 +69,15 @@ const Relatorios = () => {
       if (todosError) throw todosError;
 
       // Contar "em andamento" independente de data (status atual)
+      // Agrupa 4 status: em andamento, aguardando devolutiva, aguardando ministério, planner
+      const statusEmAndamento = [
+        "em andamento", 
+        "aguardando devolutiva", 
+        "aguardando ministério", 
+        "planner"
+      ];
       const emAndamento = todosChamados?.filter(
-        c => c.status.toLowerCase() !== "fechado" && c.status.toLowerCase() !== "encerrado"
+        c => statusEmAndamento.some(s => c.status.toLowerCase().includes(s.toLowerCase()))
       ).length || 0;
 
       // Query para chamados criados no período (para estatísticas gerais)
