@@ -69,15 +69,15 @@ const Relatorios = () => {
       if (todosError) throw todosError;
 
       // Contar "em andamento" independente de data (status atual)
-      // Agrupa 4 status: em andamento, aguardando devolutiva, aguardando ministério, planner
+      // Agrupa status que indicam andamento: Em_andamento, Aguardando_devolutiva, Aguardando_ministerio, planner
       const statusEmAndamento = [
-        "em andamento", 
-        "aguardando devolutiva", 
-        "aguardando ministério", 
+        "Em_andamento", 
+        "Aguardando_devolutiva", 
+        "Aguardando_ministerio", 
         "planner"
       ];
       const emAndamento = todosChamados?.filter(
-        c => statusEmAndamento.some(s => c.status.toLowerCase().includes(s.toLowerCase()))
+        c => statusEmAndamento.includes(c.status)
       ).length || 0;
 
       // Query para chamados criados no período (para estatísticas gerais)
