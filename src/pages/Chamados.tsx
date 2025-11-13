@@ -5,14 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Clock, AlertCircle, Search, X, MessageSquare } from "lucide-react";
+import { Plus, Clock, AlertCircle, Search, X, MessageSquare, Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isPrazoExpirado } from "@/lib/dateUtils";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 
 type Chamado = {
   id: string;
@@ -41,7 +46,9 @@ const Chamados = () => {
   const [statusOpcoes, setStatusOpcoes] = useState<StatusOpcao[]>([]);
   const [filtroNivel, setFiltroNivel] = useState<string>("all");
   const [filtroEstruturante, setFiltroEstruturante] = useState<string>("all");
-  const [filtroStatus, setFiltroStatus] = useState<string>("all");
+  const [filtroStatus, setFiltroStatus] = useState<string[]>([]);
+  const [filtroDataInicio, setFiltroDataInicio] = useState<Date | undefined>(undefined);
+  const [filtroDataFim, setFiltroDataFim] = useState<Date | undefined>(undefined);
   const [selectedChamadoId, setSelectedChamadoId] = useState<string | null>(null);
   const [anotacoesDialog, setAnotacoesDialog] = useState<string>("");
   const navigate = useNavigate();
@@ -79,13 +86,30 @@ const Chamados = () => {
       filtered = filtered.filter((chamado) => chamado.estruturante === filtroEstruturante);
     }
 
-    // Aplicar filtro de status
-    if (filtroStatus !== "all") {
-      filtered = filtered.filter((chamado) => chamado.status === filtroStatus);
+    // Aplicar filtro de status (múltiplos)
+    if (filtroStatus.length > 0) {
+      filtered = filtered.filter((chamado) => filtroStatus.includes(chamado.status));
+    }
+
+    // Aplicar filtro de data (baseado em data_criacao)
+    if (filtroDataInicio) {
+      filtered = filtered.filter((chamado) => {
+        const dataCriacao = new Date(chamado.data_criacao);
+        return dataCriacao >= filtroDataInicio;
+      });
+    }
+
+    if (filtroDataFim) {
+      filtered = filtered.filter((chamado) => {
+        const dataCriacao = new Date(chamado.data_criacao);
+        const fimDoDia = new Date(filtroDataFim);
+        fimDoDia.setHours(23, 59, 59, 999);
+        return dataCriacao <= fimDoDia;
+      });
     }
 
     setFilteredChamados(filtered);
-  }, [searchTerm, chamados, filtroNivel, filtroEstruturante, filtroStatus]);
+  }, [searchTerm, chamados, filtroNivel, filtroEstruturante, filtroStatus, filtroDataInicio, filtroDataFim]);
 
   const fetchChamados = async () => {
     try {
@@ -184,11 +208,13 @@ const Chamados = () => {
   const limparFiltros = () => {
     setFiltroNivel("all");
     setFiltroEstruturante("all");
-    setFiltroStatus("all");
+    setFiltroStatus([]);
+    setFiltroDataInicio(undefined);
+    setFiltroDataFim(undefined);
     setSearchTerm("");
   };
 
-  const hasActiveFilters = filtroNivel !== "all" || filtroEstruturante !== "all" || filtroStatus !== "all" || searchTerm !== "";
+  const hasActiveFilters = filtroNivel !== "all" || filtroEstruturante !== "all" || filtroStatus.length > 0 || searchTerm !== "" || filtroDataInicio || filtroDataFim;
 
   const getNivelColor = (nivel: number) => {
     switch (nivel) {
@@ -259,7 +285,7 @@ const Chamados = () => {
           <CardTitle className="text-lg">Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -296,19 +322,80 @@ const Chamados = () => {
               </SelectContent>
             </Select>
 
-            <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Status</SelectItem>
-                {statusOpcoes.map((status) => (
-                  <SelectItem key={status.nome} value={status.nome}>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !filtroDataInicio && !filtroDataFim && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {filtroDataInicio ? (
+                    filtroDataFim ? (
+                      <>
+                        {format(filtroDataInicio, "dd/MM/yy")} - {format(filtroDataFim, "dd/MM/yy")}
+                      </>
+                    ) : (
+                      format(filtroDataInicio, "dd/MM/yy")
+                    )
+                  ) : (
+                    <span>Período</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <div className="p-3 space-y-2">
+                  <div>
+                    <Label className="text-xs">Data Início</Label>
+                    <Calendar
+                      mode="single"
+                      selected={filtroDataInicio}
+                      onSelect={setFiltroDataInicio}
+                      locale={ptBR}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Data Fim</Label>
+                    <Calendar
+                      mode="single"
+                      selected={filtroDataFim}
+                      onSelect={setFiltroDataFim}
+                      locale={ptBR}
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Filtro de Status com múltipla seleção */}
+          <div className="mt-4 space-y-2">
+            <Label className="text-sm">Status (múltipla seleção)</Label>
+            <div className="flex flex-wrap gap-4">
+              {statusOpcoes.map((status) => (
+                <div key={status.nome} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`status-${status.nome}`}
+                    checked={filtroStatus.includes(status.nome)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setFiltroStatus([...filtroStatus, status.nome]);
+                      } else {
+                        setFiltroStatus(filtroStatus.filter((s) => s !== status.nome));
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor={`status-${status.nome}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
                     {status.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
 
           {hasActiveFilters && (

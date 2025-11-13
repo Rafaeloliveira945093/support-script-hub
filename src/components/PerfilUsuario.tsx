@@ -81,6 +81,18 @@ export const PerfilUsuario = () => {
   const handleSaveProfile = async () => {
     if (!profile) return;
 
+    // Validação: horário início deve ser menor que horário fim
+    if (profile.horario_inicio && profile.horario_fim) {
+      if (profile.horario_inicio >= profile.horario_fim) {
+        toast({
+          title: "Horário inválido",
+          description: "O horário final deve ser posterior ao horário inicial",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setIsSaving(true);
     try {
       const { error } = await supabase
@@ -116,6 +128,16 @@ export const PerfilUsuario = () => {
       toast({
         title: "Campos obrigatórios",
         description: "Preencha todos os campos da pausa",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validação: hora início deve ser menor que hora fim
+    if (novaPausa.hora_inicio >= novaPausa.hora_fim) {
+      toast({
+        title: "Horário inválido",
+        description: "O horário final da pausa deve ser posterior ao horário inicial",
         variant: "destructive",
       });
       return;

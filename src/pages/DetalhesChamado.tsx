@@ -214,9 +214,17 @@ const DetalhesChamado = () => {
         updateData.data_prazo = null;
       }
 
-      // Registrar data de encerramento quando status muda para "Fechado"
-      if (status.toLowerCase() === "fechado" && previousStatus.toLowerCase() !== "fechado") {
+      // Registrar data de encerramento quando status muda para "Fechado" ou "Encerrado"
+      if ((status.toLowerCase() === "fechado" || status.toLowerCase() === "encerrado") && 
+          previousStatus.toLowerCase() !== "fechado" && previousStatus.toLowerCase() !== "encerrado") {
         updateData.data_encerramento = new Date().toISOString();
+      }
+
+      // Quando status muda para "Subiu pro N3", atualizar nível para 3 automaticamente
+      if (status.toLowerCase().includes("subiu") && status.toLowerCase().includes("n3")) {
+        updateData.nivel = 3;
+        updateData.data_encaminhamento = new Date().toISOString();
+        updateData.nivel_encaminhado = 3;
       }
 
       // Registrar data de encaminhamento quando nível aumenta
