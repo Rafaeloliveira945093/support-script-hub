@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell } from "lucide-react";
+import { Bell, RefreshCw } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -23,12 +23,13 @@ type Notificacao = {
 export const Notificacoes = () => {
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [isCheckingExpired, setIsCheckingExpired] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchNotificacoes();
-    
+
     // Subscribe to realtime updates
     const channel = supabase
       .channel('notificacoes-changes')
@@ -45,8 +46,14 @@ export const Notificacoes = () => {
       )
       .subscribe();
 
+    // Automatic check for expired tickets every 5 minutes
+    const intervalId = setInterval(() => {
+      checkExpiredChamados();
+    }, 5 * 60 * 1000);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(intervalId);
     };
   }, []);
 
@@ -66,6 +73,52 @@ export const Notificacoes = () => {
       setNotificacoes(data || []);
     } catch (error: any) {
       console.error("Erro ao carregar notificações:", error);
+    }
+  };
+
+  const checkExpiredChamados = async () => {
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/check-expired-chamados`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao verificar chamados expirados');
+      }
+
+      const result = await response.json();
+      console.log('Verificação de chamados expirados:', result);
+
+      // Refresh notifications after checking
+      fetchNotificacoes();
+    } catch (error: any) {
+      console.error("Erro ao verificar chamados expirados:", error);
+    }
+  };
+
+  const handleManualCheck = async () => {
+    setIsCheckingExpired(true);
+    try {
+      await checkExpiredChamados();
+      toast({
+        title: "Verificação concluída",
+        description: "Chamados expirados verificados com sucesso",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao verificar",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsCheckingExpired(false);
     }
   };
 
@@ -108,7 +161,18 @@ export const Notificacoes = () => {
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
         <div className="space-y-2">
-          <h3 className="font-semibold">Notificações</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Notificações</h3>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleManualCheck}
+              disabled={isCheckingExpired}
+              title="Verificar chamados expirados"
+            >
+              <RefreshCw className={`h-4 w-4 ${isCheckingExpired ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
           {notificacoes.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">
               Nenhuma notificação pendente
