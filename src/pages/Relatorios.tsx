@@ -10,6 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { getStartOfDayISO, getEndOfDayISO } from "@/lib/dateUtils";
 
 type Stats = {
   total: number;
@@ -81,24 +82,24 @@ const Relatorios = () => {
       ).length || 0;
 
       // Query para chamados criados no período (para estatísticas gerais)
+      // CORREÇÃO: Usar helpers de timezone para garantir contagem correta
       let query = supabase
         .from("chamados")
         .select("*")
         .eq("user_id", user.id);
 
       if (startDate) {
-        query = query.gte("data_criacao", startDate.toISOString());
+        query = query.gte("data_criacao", getStartOfDayISO(startDate));
       }
       if (endDate) {
-        const endOfDay = new Date(endDate);
-        endOfDay.setHours(23, 59, 59, 999);
-        query = query.lte("data_criacao", endOfDay.toISOString());
+        query = query.lte("data_criacao", getEndOfDayISO(endDate));
       }
 
       const { data: chamados, error } = await query;
       if (error) throw error;
 
       // Contar fechados no período (por data_encerramento)
+      // CORREÇÃO: Usar helpers de timezone para garantir contagem correta
       let fechadosQuery = supabase
         .from("chamados")
         .select("*")
@@ -106,18 +107,17 @@ const Relatorios = () => {
         .not("data_encerramento", "is", null);
 
       if (startDate) {
-        fechadosQuery = fechadosQuery.gte("data_encerramento", startDate.toISOString());
+        fechadosQuery = fechadosQuery.gte("data_encerramento", getStartOfDayISO(startDate));
       }
       if (endDate) {
-        const endOfDay = new Date(endDate);
-        endOfDay.setHours(23, 59, 59, 999);
-        fechadosQuery = fechadosQuery.lte("data_encerramento", endOfDay.toISOString());
+        fechadosQuery = fechadosQuery.lte("data_encerramento", getEndOfDayISO(endDate));
       }
 
       const { data: fechados, error: fechadosError } = await fechadosQuery;
       if (fechadosError) throw fechadosError;
 
       // Contar encaminhados para N3 no período (por data_encaminhamento e nivel_encaminhado = 3)
+      // CORREÇÃO: Usar helpers de timezone para garantir contagem correta
       let encaminhadosQuery = supabase
         .from("chamados")
         .select("*")
@@ -126,12 +126,10 @@ const Relatorios = () => {
         .not("data_encaminhamento", "is", null);
 
       if (startDate) {
-        encaminhadosQuery = encaminhadosQuery.gte("data_encaminhamento", startDate.toISOString());
+        encaminhadosQuery = encaminhadosQuery.gte("data_encaminhamento", getStartOfDayISO(startDate));
       }
       if (endDate) {
-        const endOfDay = new Date(endDate);
-        endOfDay.setHours(23, 59, 59, 999);
-        encaminhadosQuery = encaminhadosQuery.lte("data_encaminhamento", endOfDay.toISOString());
+        encaminhadosQuery = encaminhadosQuery.lte("data_encaminhamento", getEndOfDayISO(endDate));
       }
 
       const { data: encaminhados, error: encaminhadosError } = await encaminhadosQuery;
