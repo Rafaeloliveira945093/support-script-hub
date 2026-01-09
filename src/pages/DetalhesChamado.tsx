@@ -5,13 +5,43 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ArrowLeft, Loader2, Send, User, Edit, Trash2, CalendarIcon, StickyNote, Clock, AlertCircle, Save, CheckCircle, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Send,
+  User,
+  Edit,
+  Trash2,
+  CalendarIcon,
+  StickyNote,
+  Clock,
+  AlertCircle,
+  Save,
+  CheckCircle,
+  X,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -21,7 +51,17 @@ import { updateChamadoWithLog, logChamadoChange } from "@/lib/auditLog";
 import { LinksManager } from "@/components/LinksManager";
 import { HistoricoEdicao } from "@/components/HistoricoEdicao";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Chamado = {
   id: string;
@@ -54,7 +94,7 @@ const DetalhesChamado = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const [chamado, setChamado] = useState<Chamado | null>(null);
   const [respostas, setRespostas] = useState<Resposta[]>([]);
   const [novaResposta, setNovaResposta] = useState("");
@@ -70,14 +110,20 @@ const DetalhesChamado = () => {
   const [editTitulo, setEditTitulo] = useState("");
   const [editDescricao, setEditDescricao] = useState("");
   const [dataCriacao, setDataCriacao] = useState<Date | undefined>(undefined);
-  const [dataEncaminhamento, setDataEncaminhamento] = useState<Date | undefined>(undefined);
-  const [dataEncerramento, setDataEncerramento] = useState<Date | undefined>(undefined);
+  const [dataEncaminhamento, setDataEncaminhamento] = useState<
+    Date | undefined
+  >(undefined);
+  const [dataEncerramento, setDataEncerramento] = useState<Date | undefined>(
+    undefined,
+  );
   const [anotacoesInternas, setAnotacoesInternas] = useState("");
   const [isSavingAnotacoes, setIsSavingAnotacoes] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [editEstruturante, setEditEstruturante] = useState("");
   const [estruturantes, setEstruturantes] = useState<string[]>([]);
-  const [editingRespostaId, setEditingRespostaId] = useState<string | null>(null);
+  const [editingRespostaId, setEditingRespostaId] = useState<string | null>(
+    null,
+  );
   const [editingRespostaContent, setEditingRespostaContent] = useState("");
 
   useEffect(() => {
@@ -92,7 +138,7 @@ const DetalhesChamado = () => {
   useEffect(() => {
     // Detectar mudanças não salvas
     if (chamado) {
-      const changed = 
+      const changed =
         status !== chamado.status ||
         nivel !== chamado.nivel.toString() ||
         editEstruturante !== chamado.estruturante;
@@ -108,7 +154,7 @@ const DetalhesChamado = () => {
         .order("nome");
 
       if (error) throw error;
-      setStatusOpcoes(data?.map(s => s.nome) || []);
+      setStatusOpcoes(data?.map((s) => s.nome) || []);
     } catch (error: any) {
       console.error("Erro ao carregar status:", error);
     }
@@ -122,7 +168,7 @@ const DetalhesChamado = () => {
         .order("nome");
 
       if (error) throw error;
-      setEstruturantes(data?.map(e => e.nome) || []);
+      setEstruturantes(data?.map((e) => e.nome) || []);
     } catch (error: any) {
       console.error("Erro ao carregar estruturantes:", error);
     }
@@ -148,9 +194,17 @@ const DetalhesChamado = () => {
       setPreviousNivel(data.nivel.toString());
       setEditTitulo(data.titulo);
       setEditDescricao(data.descricao_usuario);
-      setDataCriacao(data.data_criacao ? new Date(data.data_criacao) : new Date());
-      setDataEncaminhamento(data.data_encaminhamento ? new Date(data.data_encaminhamento) : undefined);
-      setDataEncerramento(data.data_encerramento ? new Date(data.data_encerramento) : undefined);
+      setDataCriacao(
+        data.data_criacao ? new Date(data.data_criacao) : new Date(),
+      );
+      setDataEncaminhamento(
+        data.data_encaminhamento
+          ? new Date(data.data_encaminhamento)
+          : undefined,
+      );
+      setDataEncerramento(
+        data.data_encerramento ? new Date(data.data_encerramento) : undefined,
+      );
       setAnotacoesInternas(data.anotacoes_internas || "");
     } catch (error: any) {
       toast({
@@ -188,7 +242,9 @@ const DetalhesChamado = () => {
 
     setIsSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
       const updateData: any = {
@@ -204,24 +260,37 @@ const DetalhesChamado = () => {
       };
 
       // Calcular prazo quando status muda para "aguardando_devolutiva"
-      if (status.toLowerCase() === "aguardando_devolutiva" && previousStatus.toLowerCase() !== "aguardando_devolutiva") {
+      if (
+        status.toLowerCase() === "aguardando_devolutiva" &&
+        previousStatus.toLowerCase() !== "aguardando_devolutiva"
+      ) {
         const dataPrazo = addBusinessHours(new Date(), 72);
         updateData.data_prazo = dataPrazo.toISOString();
       }
 
       // Limpar prazo se status mudar de "aguardando_devolutiva" para outro
-      if (previousStatus.toLowerCase() === "aguardando_devolutiva" && status.toLowerCase() !== "aguardando_devolutiva") {
+      if (
+        previousStatus.toLowerCase() === "aguardando_devolutiva" &&
+        status.toLowerCase() !== "aguardando_devolutiva"
+      ) {
         updateData.data_prazo = null;
       }
 
       // Registrar data de encerramento quando status muda para "Fechado" ou "Encerrado"
-      if ((status.toLowerCase() === "fechado" || status.toLowerCase() === "encerrado") && 
-          previousStatus.toLowerCase() !== "fechado" && previousStatus.toLowerCase() !== "encerrado") {
+      if (
+        (status.toLowerCase() === "Encerrado" ||
+          status.toLowerCase() === "Encerrado") &&
+        previousStatus.toLowerCase() !== "Encerrado" &&
+        previousStatus.toLowerCase() !== "Encerrado"
+      ) {
         updateData.data_encerramento = new Date().toISOString();
       }
 
       // Quando status muda para "Subiu pro N3", atualizar nível para 3 automaticamente
-      if (status.toLowerCase().includes("subiu") && status.toLowerCase().includes("n3")) {
+      if (
+        status.toLowerCase().includes("subiu") &&
+        status.toLowerCase().includes("n3")
+      ) {
         updateData.nivel = 3;
         updateData.data_encaminhamento = new Date().toISOString();
         updateData.nivel_encaminhado = 3;
@@ -238,7 +307,7 @@ const DetalhesChamado = () => {
         chamado.id,
         user.id,
         updateData,
-        previousValues
+        previousValues,
       );
 
       if (!result.success) throw result.error;
@@ -276,18 +345,18 @@ const DetalhesChamado = () => {
     setIsSaving(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) throw new Error("Usuário não autenticado");
 
-      const { error } = await supabase
-        .from("respostas")
-        .insert({
-          chamado_id: id,
-          user_id: user.id,
-          conteudo: novaResposta,
-          tipo: tipoResposta,
-        });
+      const { error } = await supabase.from("respostas").insert({
+        chamado_id: id,
+        user_id: user.id,
+        conteudo: novaResposta,
+        tipo: tipoResposta,
+      });
 
       if (error) throw error;
 
@@ -298,7 +367,7 @@ const DetalhesChamado = () => {
           user_id: user.id,
           acao: "response_added",
           campo_alterado: "respostas",
-          valor_novo: `Tipo: ${tipoResposta}`
+          valor_novo: `Tipo: ${tipoResposta}`,
         });
       }
 
@@ -347,8 +416,12 @@ const DetalhesChamado = () => {
           titulo: editTitulo.trim(),
           descricao_usuario: editDescricao.trim(),
           data_criacao: dataCriacao.toISOString(),
-          data_encaminhamento: dataEncaminhamento ? dataEncaminhamento.toISOString() : null,
-          data_encerramento: dataEncerramento ? dataEncerramento.toISOString() : null,
+          data_encaminhamento: dataEncaminhamento
+            ? dataEncaminhamento.toISOString()
+            : null,
+          data_encerramento: dataEncerramento
+            ? dataEncerramento.toISOString()
+            : null,
         })
         .eq("id", chamado.id);
 
@@ -372,7 +445,12 @@ const DetalhesChamado = () => {
 
   const handleExcluirChamado = async () => {
     if (!chamado) return;
-    if (!confirm("Tem certeza que deseja excluir este chamado? Esta ação não pode ser desfeita.")) return;
+    if (
+      !confirm(
+        "Tem certeza que deseja excluir este chamado? Esta ação não pode ser desfeita.",
+      )
+    )
+      return;
 
     try {
       const { error } = await supabase
@@ -402,15 +480,17 @@ const DetalhesChamado = () => {
 
     setIsSavingAnotacoes(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
       const { error } = await supabase
         .from("chamados")
-        .update({ 
+        .update({
           anotacoes_internas: anotacoesInternas,
           last_edited_at: new Date().toISOString(),
-          last_edited_by: user.id
+          last_edited_by: user.id,
         })
         .eq("id", chamado.id);
 
@@ -421,7 +501,7 @@ const DetalhesChamado = () => {
         chamado_id: chamado.id,
         user_id: user.id,
         acao: "notes_updated",
-        campo_alterado: "anotacoes_internas"
+        campo_alterado: "anotacoes_internas",
       });
 
       toast({
@@ -444,11 +524,13 @@ const DetalhesChamado = () => {
 
     setIsSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
       const updateData = {
-        status: "Fechado",
+        status: "Encerrado", // <- status final correto
         data_encerramento: new Date().toISOString(),
       };
 
@@ -456,24 +538,30 @@ const DetalhesChamado = () => {
         status: chamado.status,
       };
 
+      // Registrar a auditoria corretamente
       const result = await updateChamadoWithLog(
         chamado.id,
         user.id,
         updateData,
-        previousValues
+        previousValues,
       );
 
       if (!result.success) throw result.error;
 
       toast({
-        title: "Chamado concluído!",
-        description: "O chamado foi marcado como concluído",
+        title: "Chamado encerrado",
+        description: "O chamado foi marcado como Encerrado com sucesso.",
       });
 
-      fetchChamado();
+      // Atualiza a interface sem precisar recarregar
+      setStatus("Encerrado");
+      setDataEncerramento(new Date());
+      setPreviousStatus("Encerrado");
+
+      fetchChamado(); // recarrega tudo certinho
     } catch (error: any) {
       toast({
-        title: "Erro ao concluir chamado",
+        title: "Erro ao encerrar chamado",
         description: error.message,
         variant: "destructive",
       });
@@ -493,7 +581,9 @@ const DetalhesChamado = () => {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
       const { error } = await supabase
@@ -510,7 +600,7 @@ const DetalhesChamado = () => {
           user_id: user.id,
           acao: "update",
           campo_alterado: "resposta",
-          valor_novo: "Resposta editada"
+          valor_novo: "Resposta editada",
         });
       }
 
@@ -533,7 +623,9 @@ const DetalhesChamado = () => {
 
   const handleExcluirResposta = async (respostaId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
       const { error } = await supabase
@@ -550,7 +642,7 @@ const DetalhesChamado = () => {
           user_id: user.id,
           acao: "update",
           campo_alterado: "resposta",
-          valor_novo: "Resposta excluída"
+          valor_novo: "Resposta excluída",
         });
       }
 
@@ -618,18 +710,20 @@ const DetalhesChamado = () => {
             </div>
             <div className="flex gap-2">
               {/* Botão Concluído */}
-              {chamado.status.toLowerCase() !== "fechado" && chamado.status.toLowerCase() !== "encerrado" && !isEditingChamado && (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={handleConcluirChamado}
-                  disabled={isSaving}
-                  className="gap-2"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  Concluído
-                </Button>
-              )}
+              {chamado.status.toLowerCase() !== "encerrado" &&
+                !isEditingChamado && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleConcluirChamado}
+                    disabled={isSaving}
+                    className="gap-2"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Concluído
+                  </Button>
+                )}
+
               {isEditingChamado ? (
                 <>
                   <Button size="sm" onClick={handleSalvarEdicaoChamado}>
@@ -675,7 +769,7 @@ const DetalhesChamado = () => {
               <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
               <TabsTrigger value="historico">Histórico de Edição</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="detalhes" className="space-y-6 mt-6">
               {/* Botão Salvar fixo no topo quando há mudanças */}
               {hasUnsavedChanges && (
@@ -684,7 +778,10 @@ const DetalhesChamado = () => {
                     <p className="text-sm text-muted-foreground">
                       Você tem alterações não salvas
                     </p>
-                    <Button onClick={handleSaveQuickChanges} disabled={isSaving}>
+                    <Button
+                      onClick={handleSaveQuickChanges}
+                      disabled={isSaving}
+                    >
                       {isSaving ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
@@ -696,381 +793,430 @@ const DetalhesChamado = () => {
                 </div>
               )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOpcoes.map((st) => (
-                    <SelectItem key={st} value={st}>
-                      {st}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Nível</Label>
-              <Select value={nivel} onValueChange={setNivel}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Nível 1 - Baixo</SelectItem>
-                  <SelectItem value="2">Nível 2 - Médio</SelectItem>
-                  <SelectItem value="3">Nível 3 - Alto</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Estruturante</Label>
-            <Select value={editEstruturante} onValueChange={setEditEstruturante}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {estruturantes.map((est) => (
-                  <SelectItem key={est} value={est}>
-                    {est}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Datas do Chamado</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Data de Abertura *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !dataCriacao && "text-muted-foreground"
-                      )}
-                      disabled={!isEditingChamado}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dataCriacao ? format(dataCriacao, "dd/MM/yyyy HH:mm") : "Selecione a data"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dataCriacao}
-                      onSelect={setDataCriacao}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Data de Encaminhamento</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !dataEncaminhamento && "text-muted-foreground"
-                      )}
-                      disabled={!isEditingChamado}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dataEncaminhamento ? format(dataEncaminhamento, "dd/MM/yyyy HH:mm") : "Não definida"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dataEncaminhamento}
-                      onSelect={setDataEncaminhamento}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                    {dataEncaminhamento && (
-                      <div className="p-3 border-t">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDataEncaminhamento(undefined)}
-                          className="w-full"
-                        >
-                          Limpar data
-                        </Button>
-                      </div>
-                    )}
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Data de Encerramento</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !dataEncerramento && "text-muted-foreground"
-                      )}
-                      disabled={!isEditingChamado}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dataEncerramento ? format(dataEncerramento, "dd/MM/yyyy HH:mm") : "Não definida"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dataEncerramento}
-                      onSelect={setDataEncerramento}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                    {dataEncerramento && (
-                      <div className="p-3 border-t">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDataEncerramento(undefined)}
-                          className="w-full"
-                        >
-                          Limpar data
-                        </Button>
-                      </div>
-                    )}
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-2">
-            <Label>Descrição Original</Label>
-            {isEditingChamado ? (
-              <Textarea
-                value={editDescricao}
-                onChange={(e) => setEditDescricao(e.target.value)}
-                className="min-h-[100px] max-h-[60vh] resize-y"
-              />
-            ) : (
-              <div className="p-3 rounded-lg border bg-muted/30 max-h-[60vh] overflow-y-auto">
-                <p className="whitespace-pre-wrap text-sm">{chamado.descricao_usuario}</p>
-              </div>
-            )}
-          </div>
-
-          <Separator />
-
-          {/* Sistema de Links Dinâmico */}
-          <LinksManager chamadoId={chamado.id} />
-
-          {/* Prazo do chamado */}
-          {chamado.data_prazo && (
-            <div className={cn(
-              "p-4 rounded-lg border",
-              isPrazoExpirado(chamado.data_prazo)
-                ? "bg-destructive/10 border-destructive"
-                : "bg-muted border-border"
-            )}>
-              <div className="flex items-center gap-2">
-                {isPrazoExpirado(chamado.data_prazo) ? (
-                  <AlertCircle className="h-5 w-5 text-destructive" />
-                ) : (
-                  <Clock className="h-5 w-5 text-muted-foreground" />
-                )}
-                <div>
-                  <p className={cn(
-                    "font-semibold",
-                    isPrazoExpirado(chamado.data_prazo)
-                      ? "text-destructive"
-                      : "text-foreground"
-                  )}>
-                    {isPrazoExpirado(chamado.data_prazo) ? "Prazo Expirado!" : "Prazo de Devolutiva"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {isPrazoExpirado(chamado.data_prazo) ? "Expirou em: " : "Expira em: "}
-                    {format(new Date(chamado.data_prazo), "dd/MM/yyyy 'às' HH:mm")}
-                  </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOpcoes.map((st) => (
+                        <SelectItem key={st} value={st}>
+                          {st}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Nível</Label>
+                  <Select value={nivel} onValueChange={setNivel}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Nível 1 - Baixo</SelectItem>
+                      <SelectItem value="2">Nível 2 - Médio</SelectItem>
+                      <SelectItem value="3">Nível 3 - Alto</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            </div>
-          )}
 
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Histórico de Respostas</h3>
-            
-            {respostas.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                Nenhuma resposta ainda. Seja o primeiro a responder!
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {respostas.map((resposta) => (
-                  <Card key={resposta.id}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">
-                            {resposta.tipo === "usuario" ? "Usuário" : "Central"}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            · {formatDate(resposta.data_criacao)}
-                          </span>
-                        </div>
-                        <div className="flex gap-1">
-                          {editingRespostaId === resposta.id ? (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEditarResposta(resposta.id)}
-                              >
-                                <CheckCircle className="h-4 w-4 text-success" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  setEditingRespostaId(null);
-                                  setEditingRespostaContent("");
-                                }}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  setEditingRespostaId(resposta.id);
-                                  setEditingRespostaContent(resposta.conteudo);
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon">
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Tem certeza que deseja excluir esta resposta? Esta ação não pode ser desfeita.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleExcluirResposta(resposta.id)}>
-                                      Excluir
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                     </CardHeader>
-                     <CardContent>
-                       {editingRespostaId === resposta.id ? (
-                         <RichTextEditor
-                           content={editingRespostaContent}
-                           onChange={setEditingRespostaContent}
-                           placeholder="Edite a resposta..."
-                         />
-                       ) : (
-                         <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: resposta.conteudo }} />
-                       )}
-                     </CardContent>
-                   </Card>
-                ))}
+              <div className="space-y-2">
+                <Label>Estruturante</Label>
+                <Select
+                  value={editEstruturante}
+                  onValueChange={setEditEstruturante}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {estruturantes.map((est) => (
+                      <SelectItem key={est} value={est}>
+                        {est}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </div>
 
-          <Separator />
+              <Separator />
 
-          <div className="space-y-3">
-            <Label>Nova Resposta</Label>
-            <div className="space-y-2">
-              <Label>Tipo de Resposta</Label>
-              <Select value={tipoResposta} onValueChange={setTipoResposta}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="usuario">Resposta do Usuário</SelectItem>
-                  <SelectItem value="atendente">Resposta da Central</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <RichTextEditor
-              content={novaResposta}
-              onChange={setNovaResposta}
-              placeholder="Digite sua resposta aqui..."
-            />
-            <Button onClick={handleEnviarResposta} disabled={isSaving}>
-              {isSaving ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="mr-2 h-4 w-4" />
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Datas do Chamado</h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Data de Abertura *</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !dataCriacao && "text-muted-foreground",
+                          )}
+                          disabled={!isEditingChamado}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dataCriacao
+                            ? format(dataCriacao, "dd/MM/yyyy HH:mm")
+                            : "Selecione a data"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dataCriacao}
+                          onSelect={setDataCriacao}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Data de Encaminhamento</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !dataEncaminhamento && "text-muted-foreground",
+                          )}
+                          disabled={!isEditingChamado}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dataEncaminhamento
+                            ? format(dataEncaminhamento, "dd/MM/yyyy HH:mm")
+                            : "Não definida"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dataEncaminhamento}
+                          onSelect={setDataEncaminhamento}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                        {dataEncaminhamento && (
+                          <div className="p-3 border-t">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDataEncaminhamento(undefined)}
+                              className="w-full"
+                            >
+                              Limpar data
+                            </Button>
+                          </div>
+                        )}
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Data de Encerramento</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !dataEncerramento && "text-muted-foreground",
+                          )}
+                          disabled={!isEditingChamado}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dataEncerramento
+                            ? format(dataEncerramento, "dd/MM/yyyy HH:mm")
+                            : "Não definida"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dataEncerramento}
+                          onSelect={setDataEncerramento}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                        {dataEncerramento && (
+                          <div className="p-3 border-t">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDataEncerramento(undefined)}
+                              className="w-full"
+                            >
+                              Limpar data
+                            </Button>
+                          </div>
+                        )}
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label>Descrição Original</Label>
+                {isEditingChamado ? (
+                  <Textarea
+                    value={editDescricao}
+                    onChange={(e) => setEditDescricao(e.target.value)}
+                    className="min-h-[100px] max-h-[60vh] resize-y"
+                  />
+                ) : (
+                  <div className="p-3 rounded-lg border bg-muted/30 max-h-[60vh] overflow-y-auto">
+                    <p className="whitespace-pre-wrap text-sm">
+                      {chamado.descricao_usuario}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Sistema de Links Dinâmico */}
+              <LinksManager chamadoId={chamado.id} />
+
+              {/* Prazo do chamado */}
+              {chamado.data_prazo && (
+                <div
+                  className={cn(
+                    "p-4 rounded-lg border",
+                    isPrazoExpirado(chamado.data_prazo)
+                      ? "bg-destructive/10 border-destructive"
+                      : "bg-muted border-border",
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    {isPrazoExpirado(chamado.data_prazo) ? (
+                      <AlertCircle className="h-5 w-5 text-destructive" />
+                    ) : (
+                      <Clock className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <div>
+                      <p
+                        className={cn(
+                          "font-semibold",
+                          isPrazoExpirado(chamado.data_prazo)
+                            ? "text-destructive"
+                            : "text-foreground",
+                        )}
+                      >
+                        {isPrazoExpirado(chamado.data_prazo)
+                          ? "Prazo Expirado!"
+                          : "Prazo de Devolutiva"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {isPrazoExpirado(chamado.data_prazo)
+                          ? "Expirou em: "
+                          : "Expira em: "}
+                        {format(
+                          new Date(chamado.data_prazo),
+                          "dd/MM/yyyy 'às' HH:mm",
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
-              Enviar Resposta
-            </Button>
-          </div>
 
-          <Separator />
+              <Separator />
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2">
-                <StickyNote className="h-4 w-4" />
-                Anotações Internas
-              </Label>
-              <Button 
-                size="sm" 
-                onClick={handleSalvarAnotacoes}
-                disabled={isSavingAnotacoes}
-              >
-                {isSavingAnotacoes ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Salvar Anotações
-              </Button>
-            </div>
-            <RichTextEditor
-              content={anotacoesInternas}
-              onChange={setAnotacoesInternas}
-              placeholder="Adicione anotações internas que não aparecem nas respostas do chamado..."
-            />
-          </div>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">
+                  Histórico de Respostas
+                </h3>
+
+                {respostas.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    Nenhuma resposta ainda. Seja o primeiro a responder!
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {respostas.map((resposta) => (
+                      <Card key={resposta.id}>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium">
+                                {resposta.tipo === "usuario"
+                                  ? "Usuário"
+                                  : "Central"}
+                              </span>
+                              <span className="text-sm text-muted-foreground">
+                                · {formatDate(resposta.data_criacao)}
+                              </span>
+                            </div>
+                            <div className="flex gap-1">
+                              {editingRespostaId === resposta.id ? (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() =>
+                                      handleEditarResposta(resposta.id)
+                                    }
+                                  >
+                                    <CheckCircle className="h-4 w-4 text-success" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      setEditingRespostaId(null);
+                                      setEditingRespostaContent("");
+                                    }}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      setEditingRespostaId(resposta.id);
+                                      setEditingRespostaContent(
+                                        resposta.conteudo,
+                                      );
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon">
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                          Confirmar exclusão
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Tem certeza que deseja excluir esta
+                                          resposta? Esta ação não pode ser
+                                          desfeita.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>
+                                          Cancelar
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() =>
+                                            handleExcluirResposta(resposta.id)
+                                          }
+                                        >
+                                          Excluir
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          {editingRespostaId === resposta.id ? (
+                            <RichTextEditor
+                              content={editingRespostaContent}
+                              onChange={setEditingRespostaContent}
+                              placeholder="Edite a resposta..."
+                            />
+                          ) : (
+                            <div
+                              className="prose prose-sm max-w-none"
+                              dangerouslySetInnerHTML={{
+                                __html: resposta.conteudo,
+                              }}
+                            />
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <Label>Nova Resposta</Label>
+                <div className="space-y-2">
+                  <Label>Tipo de Resposta</Label>
+                  <Select value={tipoResposta} onValueChange={setTipoResposta}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="usuario">
+                        Resposta do Usuário
+                      </SelectItem>
+                      <SelectItem value="atendente">
+                        Resposta da Central
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <RichTextEditor
+                  content={novaResposta}
+                  onChange={setNovaResposta}
+                  placeholder="Digite sua resposta aqui..."
+                />
+                <Button onClick={handleEnviarResposta} disabled={isSaving}>
+                  {isSaving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="mr-2 h-4 w-4" />
+                  )}
+                  Enviar Resposta
+                </Button>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <StickyNote className="h-4 w-4" />
+                    Anotações Internas
+                  </Label>
+                  <Button
+                    size="sm"
+                    onClick={handleSalvarAnotacoes}
+                    disabled={isSavingAnotacoes}
+                  >
+                    {isSavingAnotacoes ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Salvar Anotações
+                  </Button>
+                </div>
+                <RichTextEditor
+                  content={anotacoesInternas}
+                  onChange={setAnotacoesInternas}
+                  placeholder="Adicione anotações internas que não aparecem nas respostas do chamado..."
+                />
+              </div>
             </TabsContent>
-            
+
             <TabsContent value="historico" className="mt-6">
               <HistoricoEdicao chamadoId={chamado.id} />
             </TabsContent>

@@ -2,19 +2,48 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Clock, AlertCircle, Search, X, MessageSquare, Calendar as CalendarIcon } from "lucide-react";
+import {
+  Plus,
+  Clock,
+  AlertCircle,
+  Search,
+  X,
+  MessageSquare,
+  Calendar as CalendarIcon,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isPrazoExpirado } from "@/lib/dateUtils";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
@@ -47,9 +76,30 @@ const Chamados = () => {
   const [filtroNivel, setFiltroNivel] = useState<string>("all");
   const [filtroEstruturante, setFiltroEstruturante] = useState<string>("all");
   const [filtroStatus, setFiltroStatus] = useState<string[]>([]);
-  const [filtroDataInicio, setFiltroDataInicio] = useState<Date | undefined>(undefined);
-  const [filtroDataFim, setFiltroDataFim] = useState<Date | undefined>(undefined);
-  const [selectedChamadoId, setSelectedChamadoId] = useState<string | null>(null);
+  const [filtroDataInicio, setFiltroDataInicio] = useState<Date | undefined>(
+    undefined,
+  );
+  const [filtroDataFim, setFiltroDataFim] = useState<Date | undefined>(
+    undefined,
+  );
+  // Carregar filtros persistidos ao abrir a página
+  useEffect(() => {
+    const saved = localStorage.getItem("filtrosChamados");
+    if (saved) {
+      const f = JSON.parse(saved);
+
+      if (f.searchTerm) setSearchTerm(f.searchTerm);
+      if (f.filtroNivel) setFiltroNivel(f.filtroNivel);
+      if (f.filtroEstruturante) setFiltroEstruturante(f.filtroEstruturante);
+      if (f.filtroStatus) setFiltroStatus(f.filtroStatus);
+      if (f.filtroDataInicio) setFiltroDataInicio(new Date(f.filtroDataInicio));
+      if (f.filtroDataFim) setFiltroDataFim(new Date(f.filtroDataFim));
+    }
+  }, []);
+
+  const [selectedChamadoId, setSelectedChamadoId] = useState<string | null>(
+    null,
+  );
   const [anotacoesDialog, setAnotacoesDialog] = useState<string>("");
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -58,7 +108,7 @@ const Chamados = () => {
     fetchChamados();
     fetchEstruturantes();
     fetchStatusOpcoes();
-    
+
     // Verificar prazos expirados a cada minuto
     const interval = setInterval(checkPrazosExpirados, 60000);
     return () => clearInterval(interval);
@@ -69,26 +119,36 @@ const Chamados = () => {
 
     // Aplicar busca por texto
     if (searchTerm.trim() !== "") {
-      filtered = filtered.filter((chamado) =>
-        chamado.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (chamado.numero_chamado && chamado.numero_chamado.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        chamado.titulo.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (chamado) =>
+          chamado.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (chamado.numero_chamado &&
+            chamado.numero_chamado
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())) ||
+          chamado.titulo.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     // Aplicar filtro de nível
     if (filtroNivel !== "all") {
-      filtered = filtered.filter((chamado) => chamado.nivel === parseInt(filtroNivel));
+      filtered = filtered.filter(
+        (chamado) => chamado.nivel === parseInt(filtroNivel),
+      );
     }
 
     // Aplicar filtro de estruturante
     if (filtroEstruturante !== "all") {
-      filtered = filtered.filter((chamado) => chamado.estruturante === filtroEstruturante);
+      filtered = filtered.filter(
+        (chamado) => chamado.estruturante === filtroEstruturante,
+      );
     }
 
     // Aplicar filtro de status (múltiplos)
     if (filtroStatus.length > 0) {
-      filtered = filtered.filter((chamado) => filtroStatus.includes(chamado.status));
+      filtered = filtered.filter((chamado) =>
+        filtroStatus.includes(chamado.status),
+      );
     }
 
     // Aplicar filtro de data (baseado em data_criacao)
@@ -109,13 +169,45 @@ const Chamados = () => {
     }
 
     setFilteredChamados(filtered);
-  }, [searchTerm, chamados, filtroNivel, filtroEstruturante, filtroStatus, filtroDataInicio, filtroDataFim]);
+  }, [
+    searchTerm,
+    chamados,
+    filtroNivel,
+    filtroEstruturante,
+    filtroStatus,
+    filtroDataInicio,
+    filtroDataFim,
+  ]);
+
+  // Salvar filtros sempre que algum filtro mudar
+  useEffect(() => {
+    localStorage.setItem(
+      "filtrosChamados",
+      JSON.stringify({
+        searchTerm,
+        filtroNivel,
+        filtroEstruturante,
+        filtroStatus,
+        filtroDataInicio,
+        filtroDataFim,
+      }),
+    );
+  }, [
+    searchTerm,
+    filtroNivel,
+    filtroEstruturante,
+    filtroStatus,
+    filtroDataInicio,
+    filtroDataFim,
+  ]);
 
   const fetchChamados = async () => {
     try {
       const { data, error } = await supabase
         .from("chamados")
-        .select("id, numero_chamado, titulo, status, data_criacao, nivel, estruturante, data_prazo, user_id, anotacoes_internas, last_edited_at")
+        .select(
+          "id, numero_chamado, titulo, status, data_criacao, nivel, estruturante, data_prazo, user_id, anotacoes_internas, last_edited_at",
+        )
         .order("last_edited_at", { ascending: false, nullsFirst: false })
         .order("data_criacao", { ascending: false });
 
@@ -167,7 +259,9 @@ const Chamados = () => {
 
   const checkPrazosExpirados = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       // Buscar chamados com prazo expirado que ainda não foram notificados
@@ -212,9 +306,18 @@ const Chamados = () => {
     setFiltroDataInicio(undefined);
     setFiltroDataFim(undefined);
     setSearchTerm("");
+
+    // limpar persistência
+    localStorage.removeItem("filtrosChamados");
   };
 
-  const hasActiveFilters = filtroNivel !== "all" || filtroEstruturante !== "all" || filtroStatus.length > 0 || searchTerm !== "" || filtroDataInicio || filtroDataFim;
+  const hasActiveFilters =
+    filtroNivel !== "all" ||
+    filtroEstruturante !== "all" ||
+    filtroStatus.length > 0 ||
+    searchTerm !== "" ||
+    filtroDataInicio ||
+    filtroDataFim;
 
   const getNivelColor = (nivel: number) => {
     switch (nivel) {
@@ -244,13 +347,16 @@ const Chamados = () => {
     if (dataPrazo && isPrazoExpirado(dataPrazo)) {
       return "#ef4444"; // red-500
     }
-    const statusOpcao = statusOpcoes.find(s => s.nome === statusNome);
+    const statusOpcao = statusOpcoes.find((s) => s.nome === statusNome);
     return statusOpcao?.cor || "#9ca3af";
   };
 
-  const handleOpenAnotacoes = async (e: React.MouseEvent, chamadoId: string) => {
+  const handleOpenAnotacoes = async (
+    e: React.MouseEvent,
+    chamadoId: string,
+  ) => {
     e.stopPropagation();
-    const chamado = chamados.find(c => c.id === chamadoId);
+    const chamado = chamados.find((c) => c.id === chamadoId);
     if (chamado?.anotacoes_internas) {
       setAnotacoesDialog(chamado.anotacoes_internas);
       setSelectedChamadoId(chamadoId);
@@ -308,7 +414,10 @@ const Chamados = () => {
               </SelectContent>
             </Select>
 
-            <Select value={filtroEstruturante} onValueChange={setFiltroEstruturante}>
+            <Select
+              value={filtroEstruturante}
+              onValueChange={setFiltroEstruturante}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Todos os Estruturantes" />
               </SelectTrigger>
@@ -328,14 +437,17 @@ const Chamados = () => {
                   variant="outline"
                   className={cn(
                     "justify-start text-left font-normal",
-                    !filtroDataInicio && !filtroDataFim && "text-muted-foreground"
+                    !filtroDataInicio &&
+                      !filtroDataFim &&
+                      "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {filtroDataInicio ? (
                     filtroDataFim ? (
                       <>
-                        {format(filtroDataInicio, "dd/MM/yy")} - {format(filtroDataFim, "dd/MM/yy")}
+                        {format(filtroDataInicio, "dd/MM/yy")} -{" "}
+                        {format(filtroDataFim, "dd/MM/yy")}
                       </>
                     ) : (
                       format(filtroDataInicio, "dd/MM/yy")
@@ -383,7 +495,9 @@ const Chamados = () => {
                       if (checked) {
                         setFiltroStatus([...filtroStatus, status.nome]);
                       } else {
-                        setFiltroStatus(filtroStatus.filter((s) => s !== status.nome));
+                        setFiltroStatus(
+                          filtroStatus.filter((s) => s !== status.nome),
+                        );
                       }
                     }}
                   />
@@ -413,7 +527,9 @@ const Chamados = () => {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium mb-2">Nenhum chamado encontrado</p>
+            <p className="text-lg font-medium mb-2">
+              Nenhum chamado encontrado
+            </p>
             <p className="text-muted-foreground mb-4">
               Comece criando seu primeiro chamado
             </p>
@@ -427,7 +543,9 @@ const Chamados = () => {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Search className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium mb-2">Nenhum chamado encontrado</p>
+            <p className="text-lg font-medium mb-2">
+              Nenhum chamado encontrado
+            </p>
             <p className="text-muted-foreground">
               Tente buscar com outros termos
             </p>
@@ -440,7 +558,12 @@ const Chamados = () => {
               key={chamado.id}
               className="hover:shadow-md transition-shadow cursor-pointer border-l-4"
               onClick={() => navigate(`/chamados/${chamado.id}`)}
-              style={{ borderLeftColor: getStatusColor(chamado.status, chamado.data_prazo) }}
+              style={{
+                borderLeftColor: getStatusColor(
+                  chamado.status,
+                  chamado.data_prazo,
+                ),
+              }}
             >
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -452,19 +575,28 @@ const Chamados = () => {
                       <Badge className={getNivelColor(chamado.nivel)}>
                         Nível {chamado.nivel}
                       </Badge>
-                      <Badge 
+                      <Badge
                         variant="secondary"
-                        style={{ backgroundColor: getStatusColor(chamado.status, chamado.data_prazo), color: '#fff' }}
+                        style={{
+                          backgroundColor: getStatusColor(
+                            chamado.status,
+                            chamado.data_prazo,
+                          ),
+                          color: "#fff",
+                        }}
                       >
                         {chamado.status}
-                        {chamado.data_prazo && isPrazoExpirado(chamado.data_prazo) && " - PRAZO EXPIRADO"}
+                        {chamado.data_prazo &&
+                          isPrazoExpirado(chamado.data_prazo) &&
+                          " - PRAZO EXPIRADO"}
                       </Badge>
-                      {chamado.anotacoes_internas && chamado.anotacoes_internas.trim() !== "" && (
-                        <MessageSquare 
-                          className="h-5 w-5 text-muted-foreground cursor-pointer hover:text-primary transition-colors" 
-                          onClick={(e) => handleOpenAnotacoes(e, chamado.id)}
-                        />
-                      )}
+                      {chamado.anotacoes_internas &&
+                        chamado.anotacoes_internas.trim() !== "" && (
+                          <MessageSquare
+                            className="h-5 w-5 text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                            onClick={(e) => handleOpenAnotacoes(e, chamado.id)}
+                          />
+                        )}
                     </div>
                     <CardTitle className="text-xl">{chamado.titulo}</CardTitle>
                     <CardDescription className="mt-2">
@@ -484,7 +616,10 @@ const Chamados = () => {
         </div>
       )}
 
-      <Dialog open={!!selectedChamadoId} onOpenChange={(open) => !open && setSelectedChamadoId(null)}>
+      <Dialog
+        open={!!selectedChamadoId}
+        onOpenChange={(open) => !open && setSelectedChamadoId(null)}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -493,19 +628,24 @@ const Chamados = () => {
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh] pr-4">
-            <div 
+            <div
               className="prose prose-sm max-w-none dark:prose-invert"
               dangerouslySetInnerHTML={{ __html: anotacoesDialog }}
             />
           </ScrollArea>
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setSelectedChamadoId(null)}>
+            <Button
+              variant="outline"
+              onClick={() => setSelectedChamadoId(null)}
+            >
               Fechar
             </Button>
-            <Button onClick={() => {
-              setSelectedChamadoId(null);
-              navigate(`/chamados/${selectedChamadoId}`);
-            }}>
+            <Button
+              onClick={() => {
+                setSelectedChamadoId(null);
+                navigate(`/chamados/${selectedChamadoId}`);
+              }}
+            >
               Ver Completo
             </Button>
           </div>
